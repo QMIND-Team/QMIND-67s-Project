@@ -3,12 +3,21 @@ import math
 import matplotlib.pyplot as plt
 
 def rr_zone(shot):
-    '''this function is used for determining if the shot crossed the royal road by return what zone it is in'''
+    """This function determines where the shot is on the ice relative to the royal road line.
+
+        Args:
+            shot (row in dataframe): The shot you want to evaluate.
+
+        Returns:
+            1, 2, or 3 depending on which zone it is in.
+
+    Zone 1: Left side while looking at net, below the top of the circle.
+    Zone 2: Right side while looking at net, below the top of the circle.
+    Zone 3: Above the top of the circle.
+    """
     MIDDLE_LINE = 50
     TOP_OF_CIRCLE = 24.2
-    # zone 1 is left side while looking at net
-    # zone 2 is right side while looking at net
-    # zone 3 is above top of circle
+
     if shot['y'] < TOP_OF_CIRCLE:
         if shot['x'] < MIDDLE_LINE:
             return 1
@@ -18,7 +27,15 @@ def rr_zone(shot):
         return 3
 
 def royal_road(df):
-    '''this function adds a new column to whether or not the rebound crossed the royal road'''
+    """This function adds a column in the data frame depicting whether or not the rebound crossed the royal road.
+
+        Args:
+            df (data frame): The set of shots you want to evaluate.
+
+        Returns:
+            df (data frame): The updated data set with a 1 or 0 if the rebound crossed the royal road or not.
+
+    """
     # add new column for crossing royal road
     df['royal_road'] = 0
 
@@ -30,19 +47,26 @@ def royal_road(df):
     return df
 
 def rebound_type(df):
-    '''this function returns the dataframe with 4 new columns:
-    'reb' is for whether or not the shot was off a rebound
-    'reb1' is for whether or not the rebound was 1 second after the prev shot
-    'reb2' is for whether or not the rebound was 2 second after the prev shot
-    'reb3' is for whether or not the rebound was 3 second after the prev shot
-    '''
+    """This function adds 4 new columns in the data frame depicting what kind of rebound each shot is.
+
+        Args:
+            df (data frame): The set of shots you want to evaluate.
+
+        Returns:
+            df (data frame): The updated data set with a 1 or 0 in each of the four columns.
+
+    The four columns are 'reb', 'reb1', 'reb2', 'reb3'.
+    'reb': whether or not the shot was off a rebound.
+    'reb1': whether or not the rebound was 1 second after the prev shot.
+    'reb2': whether or not the rebound was 2 second after the prev shot.
+    'reb3': whether or not the rebound was 3 second after the prev shot.
+    """
     # add new columns for rebound type
     df['reb'] = 0
     df['reb1'] = 0
     df['reb2'] = 0
     df['reb3'] = 0
 
-    # 0 if not rebound, 1, 2, 3 if one-second, two-second, three-second rebounds
     for index in range(0, df.shape[0]-1):
         if df.loc[(index + 1), ('time')] - df.loc[(index), ('time')] <= 3:
             df.loc[(index + 1), ('reb')] = 1
@@ -56,8 +80,20 @@ def rebound_type(df):
     return df
 
 def polar_coords(df, ):
-    '''this function adds the polar coordinates of the shot with respect to the net
-    0 degrees is in the centre of the ice'''
+    """This function adds columns for the polar coordinates of the shot with respect to the net.
+
+        Args:
+            df (data frame): The set of shots you want to evaluate
+
+        Returns:
+            df (data frame): The updated data set with the distance, angle and which side of the net the shot was taken
+            from.
+
+    e.x. 'deg' = 10 means the shot was taken 10 degrees right of the centre line.
+         'deg' = -45 means the shot was taken 45 degrees left of the centre line.
+         'deg' = 95 means the shot was taken 95 degrees right of the centre line (behind the net).
+    """
+    # 0 degrees is in the centre of the ice
     NET_X = 50
     NET_Y = 6.7 # goal line
     df['dist'] = 0
@@ -76,7 +112,9 @@ def polar_coords(df, ):
             df.loc[(index), ('side')] = 'L'
     return df
 
-
+"""
+This is an example dataset used to test each function
+"""
 df = pd.DataFrame({'time': [5, 8, 10, 11, 15, 18, 20], 'x': [50, 25, 75, 0, 100, 0, 100], 'y': [30, 31.7, 31.7, 6.7, 6.7, 5, 5]})
 plt.plot(df['x'], df['y'])
 print(df)
