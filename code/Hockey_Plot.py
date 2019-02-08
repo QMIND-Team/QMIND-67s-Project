@@ -265,7 +265,7 @@ import pandas as pd
 import numpy as np
 import random
 
-listx = []
+"""listx = []
 for i in range(0, 50):
     x = random.randint(-230,231)
     listx.append(x)
@@ -275,18 +275,65 @@ for j in range(0, 50):
     y = random.randint(150, 501)
     listy.append(y)
 
-trace = go.Scatter(x=listx, y=listy, mode='markers')
+trace = go.Scatter(x=listx, y=listy, mode='markers')"""
+
+dataframe = pd.read_csv(Sample_Data.csv)
+
+reb1 = data.loc[data['reb1'] == 1]
+reb2 = data.loc[data['reb2'] == 1]
+reb3 = data.loc[data['reb3'] == 1]
+total = pd.concat([reb1, reb2, reb3])
+
+trace_reb1 = go.Scatter(
+    x=reb1['x']-250,
+    y=580 - reb1['y'],
+    mode='markers'
+    )
+
+trace_reb2 = go.Scatter(
+    x=reb2['x'] - 250,
+    y=580 - reb2['y'],
+    mode='markers'
+    )
+
+trace_reb3 = go.Scatter(
+    x=reb3['x'] - 250,
+    y=580 - reb3['y'],
+    mode='markers'
+)
 
 heatmap_trace = go.Histogram2dContour(
-    x=listx, y=listy, name='density', ncontours=1,
-    colorscale='Hot', reversescale=True, showscale=False,
+    x=total['x']-250, y=580 - total['y'], name='density', ncontours=1,
+    colorscale='Blues', reversescale=True, showscale=False,
     contours=dict(coloring='heatmap')
 )
 
-data = [trace, heatmap_trace]
+data = [trace_reb1, trace_reb2, trace_reb3, heatmap_trace]
+
+updatemenus = list([
+    dict(active=-1,
+         buttons=list([
+             dict(label='1 Second Rebounds',
+                  method='update',
+                  args=[{'visible': [True, False, False, False]}]),
+             dict(label='2 Second Rebounds',
+                  method='update',
+                  args=[{'visible': [False, True, False, False]}]),
+             dict(label='3 Second Rebounds',
+                  method='update',
+                  args=[{'visible': [False, False, True, False]}]),
+             dict(label='All Rebounds',
+                  method='update',
+                  args=[{'visible': [True, True, True, False]}]),
+             dict(label='Heatmap',
+                  method='update',
+                  args=[{'visible': [True, True, True, True]}])
+         ]))
+])
 
 layout = dict(
-    shapes=rink_shapes
+    shapes=rink_shapes,
+    updatemenus=updatemenus
 )
 
 fig = dict(data=data, layout=layout)
