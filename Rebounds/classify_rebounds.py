@@ -61,8 +61,8 @@ def polar_coords(df, ):
     NET_X = 50
     NET_Y = 6.7 # goal line
     df['dist'] = 0
-    df['deg'] = 0
-    df['side'] = 'R'
+    df['deg'] = 0 # ex 10 = 10 degress right of centre line, -45 = 45 degrees left of centre line, >90 is behind net
+    df['side'] = 'R' # side when facing net
     for index in range(0, df.shape[0]):
         df.loc[(index), ('dist')] = math.sqrt((df.loc[(index), ('x')] - NET_X) ** 2 + (df.loc[(index), ('y')] - NET_Y) ** 2)
         if df.loc[(index), ('y')] > NET_Y:
