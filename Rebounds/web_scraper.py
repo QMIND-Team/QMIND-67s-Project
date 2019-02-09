@@ -59,8 +59,6 @@ def prospect_stats(start_season, end_season = '2018-19', strength=[' ']):
                     row_df.append(feature.text)
                 df_dict[j] = row_df
                 j += 1
-                if j>10:
-                    break
         
             # remove column headers from data
             columns = df_dict.pop('cols')
@@ -74,5 +72,5 @@ def prospect_stats(start_season, end_season = '2018-19', strength=[' ']):
 
     return dataframe
 
-dataframe = prospect_stats('2017-2018')
+dataframe = prospect_stats('2018-2019')
 print(dataframe)
