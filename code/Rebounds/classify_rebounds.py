@@ -14,6 +14,7 @@ def rr_zone(shot):
     Zone 1: Left side while looking at net, below the top of the circle.
     Zone 2: Right side while looking at net, below the top of the circle.
     Zone 3: Above the top of the circle.
+
     """
     MIDDLE_LINE = 50
     TOP_OF_CIRCLE = 24.2
@@ -60,6 +61,7 @@ def rebound_type(df):
     'reb1': whether or not the rebound was 1 second after the prev shot.
     'reb2': whether or not the rebound was 2 second after the prev shot.
     'reb3': whether or not the rebound was 3 second after the prev shot.
+
     """
     # add new columns for rebound type
     df['reb'] = 0
@@ -92,6 +94,7 @@ def polar_coords(df, ):
     e.x. 'deg' = 10 means the shot was taken 10 degrees right of the centre line.
          'deg' = -45 means the shot was taken 45 degrees left of the centre line.
          'deg' = 95 means the shot was taken 95 degrees right of the centre line (behind the net).
+
     """
     # 0 degrees is in the centre of the ice
     NET_X = 50
