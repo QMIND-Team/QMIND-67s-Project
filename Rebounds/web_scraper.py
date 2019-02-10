@@ -18,6 +18,10 @@ def merge_frames(dict):
     #sort_by_name()
     seasons = []
     i = 0
+    """
+    Add separate functionalities for Pos, #, Inactive, Rookie, Team.
+    e.x. functionality of taking strings from Team column and adding into dataframe as team1/team2/team3.
+    """
     for season in dict:
         seasons.append(season)
         cols = []
@@ -45,11 +49,13 @@ def merge_frames(dict):
     return new_df
 
 def sort_by_name(df):
-    """
+    """Function to sort dataframe in order of name to make it easier to merge dataframes.
 
+        Args:
+            df (dataframe): The dataframe you want to sort.
 
-
-
+        Returns:
+            dataframe: dict containing dataframes of each requested year.
 
     """
 
@@ -67,7 +73,7 @@ def prospect_stats(start_season, end_season = '2018-19', strength=[' ']):
         Returns:
             dataframe: dict containing dataframes of each requested year.
 
-        """
+    """
     driver = webdriver.Firefox(executable_path='/Users/ianho/QMIND/QMIND-67s-Project/Rebounds/geckodriver')
 
     # creates a list of all the seasons wanted for scraping
