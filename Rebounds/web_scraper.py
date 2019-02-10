@@ -1,6 +1,60 @@
 from selenium import webdriver
 import pandas as pd
+import numpy
 import re
+
+def merge_frames(dict):
+    """Function to merge multiple dataframes into a single one.
+
+        Args:
+            dict (dictionary): Contains the dataframes returned from the different seasons/strengths.
+
+        Returns:
+            new_df: Dataframe containing the summed data of all the years requested from prospect_stats().
+
+    """
+    new_df = pd.DataFrame()
+    temp = {}
+    #sort_by_name()
+    seasons = []
+    i = 0
+    for season in dict:
+        seasons.append(season)
+        cols = []
+        for column in dict[season]:
+            if i == 0:
+                cols.append(column)
+        for index, row in dict[season].iterrows():
+            player = []
+            for stat in row:
+                player.append(stat)
+            if i == 0:
+                temp[index] = player
+            else:
+                for column in dict[season]:
+                    if isinstance(new_df.loc[(index), (column)], numpy.int64):
+                        new_df.loc[(index), (column)] += row[column]
+                    elif isinstance(new_df.loc[(index), (column)], numpy.double):
+                        new_df.loc[(index), (column)] += row[column]
+                        if i == len(dict)-1:
+                            new_df.loc[(index), (column)] /= i + 1
+        if i == 0:
+            new_df = pd.DataFrame.from_dict(temp, orient='index', columns=cols)
+        i += 1
+
+    return new_df
+
+def sort_by_name(df):
+    """
+
+
+
+
+
+    """
+
+    return
+
 
 def prospect_stats(start_season, end_season = '2018-19', strength=[' ']):
     """Function to scrape prospect stats website for individual players stats.
@@ -59,7 +113,8 @@ def prospect_stats(start_season, end_season = '2018-19', strength=[' ']):
                     row_df.append(feature.text)
                 df_dict[j] = row_df
                 j += 1
-        
+                if j > 10:
+                    break
             # remove column headers from data
             columns = df_dict.pop('cols')
             # create dataframe
@@ -72,5 +127,13 @@ def prospect_stats(start_season, end_season = '2018-19', strength=[' ']):
 
     return dataframe
 
-dataframe = prospect_stats('2018-2019')
+dataframe = prospect_stats('2017-2018', strength=['5v5', '3v3'])
 print(dataframe)
+"""
+d1 = pd.DataFrame({'Pos': ['C', 'RW', 'LW', 'D'], '#': ['1', '2', '3', '4'], 'Inactive': [' ', ' ', ' ', ' '], 'Rookie': [' ', ' ', ' ', '*'], 'Name': ['Ian', 'Willem', 'Andrew', 'Hayden'], 'Team': ['OTT', 'OTT', 'OTT', 'OTT'], 'GP': [50.0, 51.0, 52.0, 53.0], 'G': [25, 57, 36, 84], 'A': [99, 68, 54, 25]})
+d2 = pd.DataFrame({'Pos': ['C', 'RW', 'LW', 'D'], '#': ['1', '2', '3', '4'], 'Inactive': [' ', ' ', ' ', ' '], 'Rookie': [' ', ' ', ' ', '*'], 'Name': ['Ian', 'Willem', 'Andrew', 'Hayden'], 'Team': ['OTT', 'OTT', 'OTT', 'OTT'], 'GP': [73.0, 46.0, 50.0, 46.0], 'G': [25, 43, 87, 55], 'A': [35, 46, 25, 46]})
+data = {'2017-18': d1, '2018-19': d2}
+dfs = []
+"""
+data = merge_frames(dataframe)
+print(data)
