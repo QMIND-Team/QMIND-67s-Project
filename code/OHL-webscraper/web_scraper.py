@@ -172,7 +172,8 @@ def get_stats_scrape(start_season, end_season='2018-19', strength=[' '], top_ten
         Returns:
             void
     """
-    driver = webdriver.Firefox(executable_path='/Users/ianho/QMIND/QMIND-67s-Project/code/OHL-webscraper/geckodriver')
+    dirpath = os.getcwd()
+    driver = webdriver.Firefox(executable_path=dirpath + '/geckodriver')
 
     # creates a list of all the seasons wanted for scraping
     start_year = int(start_season[0:4])
@@ -253,11 +254,12 @@ def get_stats_csv(start_season, end_season='2018-19', strength=[' '], played_all
         Returns:
             void
     """
+    dirpath = os.getcwd()
     chrome_options = webdriver.ChromeOptions()
     prefs = {'download.default_directory': 'data'}
     chrome_options.add_experimental_option('prefs', prefs)
     driver = webdriver.Chrome(chrome_options=chrome_options,
-                              executable_path='/Users/ianho/QMIND/QMIND-67s-Project/code/OHL-webscraper/chromedriver')
+                              executable_path=dirpath + '/chromedriver')
 
     # creates a list of all the seasons wanted for scraping
     start_year = int(start_season[0:4])
@@ -332,7 +334,8 @@ def rename_csv(new_name):
         Returns:
             void
     """
-    path = "/Users/ianho/QMIND/QMIND-67s-Project/code/OHL-webscraper/data/"
+    dirpath = os.getcwd()
+    path = dirpath + "/data/"
     list_of_files = glob.glob(path + '*.csv')
     latest_file = max(list_of_files, key=os.path.getctime)
     for filename in list_of_files:
@@ -356,4 +359,4 @@ def csvs_to_dict(csvs):
         dict_df[re.match('^[^.]+', file).group(0)] = df
     return dict_df
 
-#get_stats_csv('2016-17', end_season='2018-19', strength=[' '])
+#get_stats_csv(start_season='2016-17', end_season='2018-19', strength=[' '])
