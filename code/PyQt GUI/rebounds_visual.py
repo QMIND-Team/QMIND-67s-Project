@@ -1,11 +1,12 @@
 import sys, os
 import pandas as pd
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QDateTime, Qt, QTimer, pyqtSlot
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
         QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-        QVBoxLayout, QWidget, QToolBar, QInputDialog, QListWidget, QAbstractItemView)
+        QVBoxLayout, QWidget, QToolBar, QInputDialog, QListWidget, QAbstractItemView, QGraphicsPixmapItem)
 
 class Window(QDialog):
 
@@ -58,9 +59,9 @@ class Window(QDialog):
         self.threeSecondRebounds.setCheckable(True)
         self.threeSecondRebounds.setChecked(True)
 
-        startLabel = QLabel('Start year: ')
+        startLabel = QLabel('Years: ')
         self.start = QComboBox()
-        endLabel = QLabel('End year: ')
+        endLabel = QLabel('to')
         self.end = QComboBox()
         hboxYear = QHBoxLayout()
         hboxYear.addStretch()
@@ -229,6 +230,13 @@ class Window(QDialog):
         self.rightWidget = QTabWidget()
 
         tab1 = QWidget()
+        hbox = QHBoxLayout()
+        rinkplot = QPixmap('Plot-122.png')
+        smaller_rink = rinkplot.scaled(600, 600, Qt.KeepAspectRatio, Qt.FastTransformation)
+        label = QLabel("Rink Plot")
+        label.setPixmap(smaller_rink)
+        hbox.addWidget(label)
+        tab1.setLayout(hbox)
         tab2 = QWidget()
 
         self.rightWidget.addTab(tab1, "Plot")
