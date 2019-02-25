@@ -622,4 +622,4 @@ def get_filename(leagues, start_season, end_season, players, strength):
     filename += '.csv'
     return filename
 
-download_all_year_combos(leagues=['OHL'], start_season='1997-98', players=['skaters', 'teams'], already_downloaded=True)
+download_all_year_combos(leagues=['WHL'], start_season='1996-97', players=['skaters', 'teams'], already_downloaded=True)
