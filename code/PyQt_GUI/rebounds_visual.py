@@ -16,13 +16,10 @@ class Window(QDialog):
 
         self.createLeftGroupBox()
         self.createRightWidget()
-        self.createProgressBar()
-
 
         mainLayout = QGridLayout()
         mainLayout.addWidget(self.leftGroupBox, 0, 0, 1, 1)
         mainLayout.addWidget(self.rightWidget, 0, 1, 1, 2)
-        mainLayout.addWidget(self.progressBar, 3, 0, 1, 2)
         mainLayout.setColumnStretch(0, 1)
         mainLayout.setColumnStretch(1, 1)
         self.setLayout(mainLayout)
@@ -101,6 +98,7 @@ class Window(QDialog):
         self.end.currentTextChanged.connect(self.end_year_change)
         self.league.currentTextChanged.connect(self.league_change)
         self.team.currentTextChanged.connect(self.team_change)
+        self.playerList.currentTextChanged.connect(self.player_change)
 
         shots = QRadioButton('Shots')
         goals = QRadioButton('Goals')
@@ -400,20 +398,6 @@ class Window(QDialog):
         label = QLabel("Rink Plot")
         label.setPixmap(smaller_rink)
         """
-
-    def createProgressBar(self):
-        self.progressBar = QProgressBar()
-        self.progressBar.setRange(0, 10000)
-        self.progressBar.setValue(0)
-
-        timer = QTimer(self)
-        timer.timeout.connect(self.advanceProgressBar)
-        timer.start(1000)
-
-    def advanceProgressBar(self):
-        curVal = self.progressBar.value()
-        maxVal = self.progressBar.maximum()
-        self.progressBar.setValue(curVal + (maxVal - curVal) / 100)
 
 
 if __name__ == '__main__':
