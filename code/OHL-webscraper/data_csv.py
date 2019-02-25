@@ -10,6 +10,58 @@ import re
     data frame.  Run the functions, get_stats_range(), get_stats_all_combos() or download_multiple() to test.
 """
 
+def update(leagues=['OHL', 'AHL', 'QMJHL', 'USHL', 'WHL'], players=['skaters', 'teams', 'goalies', 'defense', 'forwards'],
+           strength=[' '], already_downloaded=True):
+    """Function to download 2018-19 stats from prospect stats website and update all files.
+
+            Args:
+                leagues (List of str): The leagues you want statistics from.
+                start_season (str): The first season you want statistics from.
+                end_season (str): The last year you want statistics pulled from. Default is '2018-19'.
+                players str: Skaters (All players), forwards, defense, goalies or teams.
+                strength (List of str): 5v5, 5v4, 5v3, 4v5, 4v4, 4v3, 3v5, 3v4, 3v3 or ' ' (All).
+                min_years (int): The number of years a player has to play to be included.
+                already_downloaded (boolean): If data is already downloaded.
+
+            Returns:
+                void
+        """
+    if not already_downloaded:
+        download_multiple(leagues=leagues, players=players, strength=strength)
+
+    for league in leagues:
+        for player_type in players:
+            if player_type == 'teams':
+                sort = 'ROW'
+            elif player_type == 'goalies':
+                sort = 'Sv%'
+            else:
+                sort = 'P'
+            for play_type in strength:
+                if league == 'OHL':
+                    start_year = '1997-98'
+                elif league == 'AHL':
+                    start_year = '2005-06'
+                elif league == 'QMJHL':
+                    start_year = '1998-99'
+                elif league == 'USHL':
+                    start_year = '2002-03'
+                elif league == 'WHL':
+                    start_year = '1996-97'
+                seasons = get_seasons(start_season=start_year, end_season='2016-17')
+                if play_type != ' ':
+                    for season in seasons:
+                        merge(csvs=[league + '_' + season + '_to_2017-18_' + player_type + '_' + play_type + '.csv',
+                                    league + '_2018-19_' + player_type + '_' + play_type + '.csv'],
+                              filename=league + '_' + season + '_to_2018-19_' + player_type + '_' + play_type + '.csv',
+                              all_strings=False, sort=sort)
+                else:
+                    for season in seasons:
+                        merge(csvs=[league + '_' + season + '_to_2017-18_' + player_type + '.csv',
+                                    league + '_2018-19_' + player_type + '.csv'],
+                              filename=league + '_' + season + '_to_2018-19_' + player_type + '.csv',
+                              all_strings=False, sort=sort)
+
 def get_stats(leagues=['OHL'], start_season='2017-18', end_season='2018-19', players='skaters', strength=[' '],
                       min_years=1, already_downloaded=True):
     """Function to download stats from prospect stats website for individual players stats by clicking csv button and
@@ -28,13 +80,7 @@ def get_stats(leagues=['OHL'], start_season='2017-18', end_season='2018-19', pla
             void
     """
     # creates a list of all the seasons wanted for scraping
-    start_year = int(start_season[0:4])
-    end_year = int(end_season[0:4])
-    seasons = []
-    for x in range(start_year, end_year + 1):
-        next_year = (x + 1) % 100
-        season = str(x) + '-' + str(next_year)
-        seasons.append(season)
+    seasons = get_seasons(start_season=start_season, end_season=end_season)
 
     if not already_downloaded:
         csvs = download_multiple(leagues=leagues, seasons=seasons, players=[players], strength=strength)
@@ -48,17 +94,9 @@ def get_stats(leagues=['OHL'], start_season='2017-18', end_season='2018-19', pla
                     else:
                         csvs.append(league + '_' + season + '_' + players + '.csv')
 
-    filename = ''
-    for league in leagues:
-        filename += league + '_'
-    filename += start_season
-    if start_season != end_season:
-        filename += '_to_' + end_season
-    filename += '_' + players
-    if strength != [' ']:
-        for play_type in strength:
-            filename += '_' + play_type
-    filename += '.csv'
+    filename = get_filename(leagues=leagues, start_season=start_season, end_season=end_season, players=players,
+                            strength=strength)
+
 
     if players == 'teams':
         sort = 'ROW'
@@ -85,13 +123,7 @@ def download_all_year_combos(leagues=['OHL'], start_season='2017-18', end_season
         Returns:
             void
     """
-    start_year = int(start_season[0:4])
-    end_year = int(end_season[0:4])
-    seasons = []
-    for x in range(start_year, end_year + 1):
-        next_year = (x + 1) % 100
-        season = str(x) + '-' + str(next_year)
-        seasons.append(season)
+    seasons = get_seasons(start_season=start_season, end_season=end_season)
 
     if not already_downloaded:
         download_multiple(leagues=leagues, seasons=seasons, players=players)
@@ -108,11 +140,16 @@ def download_all_year_combos(leagues=['OHL'], start_season='2017-18', end_season
                 csvs.append(league + '_' + season + '_' + play + '.csv')
             for start_year in seasons[:-1]:
                 start_idx = seasons.index(start_year)
+                filename = ''
                 for end_year in seasons[start_idx + 1:]:
                     end_idx = seasons.index(end_year)
-                    merge(csvs=csvs[start_idx:end_idx + 1],
-                          filename=league + '_' + start_year + '_to_' + end_year + '_' + play + '.csv', sort=sort,
-                          one_league=True)
+                    if end_idx > start_idx + 1:
+                        last_merge = filename
+                        filename = league + '_' + start_year + '_to_' + end_year + '_' + play + '.csv'
+                        merge(csvs=[last_merge, csvs[end_idx]], filename=filename, sort=sort, one_league=True)
+                    else:
+                        filename = league + '_' + start_year + '_to_' + end_year + '_' + play + '.csv'
+                        merge(csvs=csvs[start_idx:end_idx + 1], filename=filename, sort=sort, one_league=True)
     return
 
 def download_multiple(leagues=['OHL'], seasons=['2018-19'], players=['skaters'], strength=[' ']):
@@ -197,13 +234,7 @@ def get_stats_scrape(leagues=['OHL'], start_season='2018-19', end_season='2018-1
             void
     """
     # creates a list of all the seasons wanted for scraping
-    start_year = int(start_season[0:4])
-    end_year = int(end_season[0:4])
-    seasons = []
-    for x in range(start_year, end_year + 1):
-        next_year = (x + 1) % 100
-        season = str(x) + '-' + str(next_year)
-        seasons.append(season)
+    seasons = get_seasons(start_season=start_season, end_season=end_season)
 
     if not already_scraped:
         csvs = scrape_multiple(leagues=leagues, seasons=seasons, players=[players], strength=strength, top_ten=top_ten)
@@ -219,17 +250,8 @@ def get_stats_scrape(leagues=['OHL'], start_season='2018-19', end_season='2018-1
                         name += '_top-ten'
                     csvs.append(name + '.csv')
 
-    filename = ''
-    for league in leagues:
-        filename += league + '_'
-    filename += start_season
-    if start_season != end_season:
-        filename += '_to_' + end_season
-    filename += '_' + players
-    if strength != [' ']:
-        for play_type in strength:
-            filename += '_' + play_type
-    filename += '.csv'
+    filename = get_filename(leagues=leagues, start_season=start_season, end_season=end_season, players=players,
+                            strength=strength)
 
     if players == 'teams':
         sort = 'ROW'
@@ -414,9 +436,12 @@ def combine(df, idx, row, all_strings=False):
         elif type_from_str(row[column]) == 'float':
             df.loc[idx, column] += row[column]
         else:
-            if df.loc[idx, column] != row[column]:
-                if df.loc[idx, column] != ' ':
-                    df.loc[idx, column] += '/' + row[column]
+            df_matches = re.findall('[^\/]+', df.loc[idx, column])
+            row_matches = re.findall('[^\/]+', row[column])
+            for match in row_matches:
+                if df_matches.count(match) == 0:
+                    if df.loc[idx, column] != ' ':
+                        df.loc[idx, column] += '/' + match
     return
 
 def sort_file(filename, sort, ascending=False):
@@ -503,11 +528,11 @@ def edit_csv(csv, players):
 def get_common_cols(dict_dfs):
     """Function to find the common columns of multiple data frames in a Dictionary.
 
-            Args:
-                dict_dfs (Dictionary): Dictionary of multiple data frames.
+        Args:
+            dict_dfs (Dictionary): Dictionary of multiple data frames.
 
-            Returns:
-                col_all_dfs (Series): Contains all the common columns of the data frames.
+        Returns:
+            col_all_dfs (Series): Contains all the common columns of the data frames.
     """
     cols = []
     col_all_dfs = []
@@ -558,11 +583,11 @@ def type_from_str(stat):
 def convert_to_type(stat):
     """Function to convert stat to int, float or string.
 
-            Args:
-                stat (str): The stat being converted.
+        Args:
+            stat (str): The stat being converted.
 
-            Returns:
-                Casted stat.
+        Returns:
+            Casted stat.
      """
     if type_from_str(stat) == 'int':
         return int(stat)
@@ -571,5 +596,30 @@ def convert_to_type(stat):
     else:
         return str(stat)
 
-download_all_year_combos(leagues=['OHL'], start_season='2013-14', players=['teams', 'skaters'])
+def get_seasons(start_season, end_season):
+    start_year = int(start_season[0:4])
+    end_year = int(end_season[0:4])
+    seasons = []
+    for x in range(start_year, end_year + 1):
+        next_year = str((x + 1) % 100)
+        if len(next_year) == 1:
+            next_year = '0' + next_year
+        season = str(x) + '-' + str(next_year)
+        seasons.append(season)
+    return seasons
 
+def get_filename(leagues, start_season, end_season, players, strength):
+    filename = ''
+    for league in leagues:
+        filename += league + '_'
+    filename += start_season
+    if start_season != end_season:
+        filename += '_to_' + end_season
+    filename += '_' + players
+    if strength != [' ']:
+        for play_type in strength:
+            filename += '_' + play_type
+    filename += '.csv'
+    return filename
+
+download_all_year_combos(leagues=['OHL'], start_season='1997-98', players=['skaters', 'teams'], already_downloaded=True)
