@@ -117,7 +117,7 @@ def polar_coords(df, ):
 
 """
 This is an example dataset used to test each function
-"""
+
 df = pd.DataFrame({'time': [5, 8, 10, 11, 15, 18, 20], 'x': [50, 25, 75, 0, 100, 0, 100], 'y': [30, 31.7, 31.7, 6.7, 6.7, 5, 5]})
 plt.plot(df['x'], df['y'])
 print(df)
@@ -131,3 +131,4 @@ print("\n\n")
 df = royal_road(df)
 print(df)
 
+"""
