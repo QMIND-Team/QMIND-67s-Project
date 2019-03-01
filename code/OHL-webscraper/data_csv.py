@@ -4,6 +4,7 @@ import os
 import time
 import pandas as pd
 import re
+from shutil import copy2
 
 """
     These functions are used to download multiple stats from prospect-stats.com and merge the stats into one 
@@ -151,6 +152,45 @@ def download_all_year_combos(leagues=['OHL'], start_season='2017-18', end_season
                         filename = league + '_' + start_year + '_to_' + end_year + '_' + play + '.csv'
                         merge(csvs=csvs[start_idx:end_idx + 1], filename=filename, sort=sort, one_league=True)
     return
+
+def get_cluster_data(years = ['2015-16', '2016-17', '2017-18'], already_downloaded=True):
+    if not already_downloaded:
+        download_multiple(leagues=['OHL'], seasons=['2015-16', '2016-17', '2017-18'], players=['skaters'], strength=[' '])
+
+    dirpath = os.getcwd()
+    path = dirpath + "/data/"
+    csvs = []
+    for year in years:
+        filename = 'OHL_' + year + '_skaters.csv'
+        csvs.append(filename)
+        copy2(path + filename, dirpath + "/cluster_data")
+
+    for year in years:
+        df = pd.read_csv(dirpath + "/cluster_data/" + 'OHL_' + year + '_skaters.csv')
+        for col in df:
+            if col == 'Name':
+                break
+            else:
+                df = df.drop(columns=col)
+        df = df.sort_values('P', ascending=False)
+        df = df.reset_index(drop=True)
+        drop_index = []
+        for index, row in df.iterrows():
+            if row['Age'] < 16 or row['Age'] >= 17:
+                drop_index.append(index)
+        offset = 0
+        for index in drop_index:
+            df = df.drop(df.index[index - offset])
+            offset += 1
+        df = df.sort_values('P', ascending=False)
+        df = df.reset_index(drop=True)
+
+        df.to_csv('cluster_data/' + 'OHL_' + year + '_skaters.csv')
+
+    merge(csvs=csvs, filename='OHL_cluster16_' + years[0] + '_to_' + years[len(years) - 1] + '.csv',
+          all_strings = False, min_years = 1, sort = 'P', one_league = True)
+    return
+
 
 def download_multiple(leagues=['OHL'], seasons=['2018-19'], players=['skaters'], strength=[' ']):
     """Function to download stats from prospect stats website for individual players stats by clicking csv button.
@@ -412,7 +452,7 @@ def merge(csvs, filename, all_strings=False, min_years=1, sort='P', one_league=T
     new_df = new_df.drop(columns='Appearances')
     new_df = new_df.sort_values(sort, ascending=False)
     new_df = new_df.reset_index(drop=True)
-    new_df.to_csv('data/' + filename)
+    new_df.to_csv('cluster_data/' + filename)
     print("Created: " + filename)
     return
 
@@ -491,7 +531,7 @@ def csvs_to_dict(csvs):
     """
     dict_df = {}
     for file in csvs:
-        df = pd.read_csv('data/' + file)
+        df = pd.read_csv('cluster_data/' + file)
         dict_df[re.match('^[^.]+', file).group(0)] = df
     return dict_df
 
@@ -622,4 +662,7 @@ def get_filename(leagues, start_season, end_season, players, strength):
     filename += '.csv'
     return filename
 
-download_all_year_combos(leagues=['WHL'], start_season='1996-97', players=['skaters', 'teams'], already_downloaded=True)
+
+
+get_cluster_data()
+#download_all_year_combos(leagues=['WHL'], start_season='1996-97', players=['skaters', 'teams'], already_downloaded=True)
