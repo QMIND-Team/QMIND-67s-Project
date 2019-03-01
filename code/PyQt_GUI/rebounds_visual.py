@@ -382,22 +382,11 @@ class Window(QDialog):
 
         self.stat_menu.currentTextChanged.connect(self.category_change)
 
-        """
-        hboxResults = QHBoxLayout()
-        hboxResults.addStretch()
-        self.stat = QLabel()
-        """
 
         layout = QVBoxLayout()
         layout.addLayout(hboxStats)
         tab1.setLayout(layout)
 
-        """
-        rinkplot = QPixmap('Plot-122.png')
-        smaller_rink = rinkplot.scaled(600, 600, Qt.KeepAspectRatio, Qt.FastTransformation)
-        label = QLabel("Rink Plot")
-        label.setPixmap(smaller_rink)
-        """
 
 
 if __name__ == '__main__':
