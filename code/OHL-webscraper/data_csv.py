@@ -6,6 +6,7 @@ import pandas as pd
 import re
 from shutil import copy2
 
+
 """
     These functions are used to download multiple stats from prospect-stats.com and merge the stats into one 
     data frame.  Run the functions, get_stats_range(), get_stats_all_combos() or download_multiple() to test.
@@ -662,7 +663,6 @@ def get_filename(leagues, start_season, end_season, players, strength):
     filename += '.csv'
     return filename
 
-
-
-get_cluster_data()
+download_multiple(leagues=['OHL'], seasons=['2018-19'])
+#get_cluster_data()
 #download_all_year_combos(leagues=['WHL'], start_season='1996-97', players=['skaters', 'teams'], already_downloaded=True)
