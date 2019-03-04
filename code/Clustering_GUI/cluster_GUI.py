@@ -14,6 +14,23 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
                              QVBoxLayout, QWidget, QToolBar, QInputDialog, QListWidget, QAbstractItemView,
                              QGraphicsPixmapItem)
 
+
+
+def select_age(df, age):
+    if age != 0:
+        df = df.loc[df['Age'] >= int(age)]
+        return df.loc[df['Age'] < int(age) + 1]
+    else:
+        return df
+
+def select_position(df, positions):
+    if positions == 'Defense':
+        return df.loc[df['Pos'] == 'D']
+    elif positions == 'Forwards':
+        return df.loc[df['Pos'] != 'D']
+    else:
+        return df
+
 ## determine which stats you would like to cluster with
 ## insert column names in an array and the dataset you would like to select from
 
@@ -88,7 +105,7 @@ def add_team2df(team_name, dataset, new_dataset):
         count = cluster_counter(i, dataset)
         team_cluster.append(count)
     team_cluster = pd.DataFrame([team_cluster])
-    team_cluster = pd.concat([team_name, team_cluster], axis = 1)
+    team_cluster = pd.concat([team_name, team_cluster], axis=1)
     new_dataset = new_dataset.append([team_cluster])
     return new_dataset
 
@@ -103,26 +120,14 @@ def find_percentages(dataset):
         new_df.iloc[i, 1:] = 100*new_df.iloc[i, 1:].div(sum)
     return new_df
 
-def cluster(stat1, stat2, stat3, stat4, positions):
-    defense = False
-    forwards = False
-    if positions == 'Defense':
-        defense = True
-    elif positions == 'Forwards':
-        forwards = True
+def cluster(data, stat1, stat2, stat3, stat4):
     # prepare data
-    data = pd.read_csv('data/OHL_cluster16_2015-16_to_2017-18.csv')
-    data = divided_by_GP(['HD G', 'HD Sh', 'MD G', 'MD Sh', 'LD G', 'LD Sh'], data)
-    df_over30gp_oldindex = data.loc[data['GP'] > 30]
-    if defense:
-        df_positions = df_over30gp_oldindex.loc[df_over30gp_oldindex['Pos'] == 'D']
-    elif forwards:
-        df_positions = df_over30gp_oldindex.loc[df_over30gp_oldindex['Pos'] != 'D']
-    else:
-        df_positions = df_over30gp_oldindex
-    df_over30gp = df_positions.reset_index(drop=True)
-    cluster_data = select_stats([stat1, stat2, stat3, stat4], df_over30gp)
-    name_team = df_over30gp.loc[:, ['Name', 'Team']]
+    cols = data.columns.tolist()
+    if cols.count('HD G') > 0:
+        data = divided_by_GP(['HD G', 'HD Sh', 'MD G', 'MD Sh', 'LD G', 'LD Sh'], data)
+    data = data.reset_index(drop=True)
+    cluster_data = select_stats([stat1, stat2, stat3, stat4], data)
+    name_team = data.loc[:, ['Name', 'Team']]
     cluster_data_with_name = pd.concat([name_team, cluster_data], axis=1)
 
     #normalize the features
@@ -135,28 +140,16 @@ def cluster(stat1, stat2, stat3, stat4, positions):
     y_kmeans = pd.DataFrame(y_kmeans)
     fullresults = pd.concat([cluster_data_with_name, y_kmeans], axis=1)
     fullresults.columns = ['Name', 'Team', stat1, stat2, stat3, stat4, 'Cluster']
-    fullresults.to_csv('data/df_withclusters.csv')
+    fullresults.to_csv('df_withclusters.csv')
 
     return fullresults
 
-def prep_data(stat1, stat2, stat3, stat4, positions):
-    data = pd.read_csv('data/OHL_cluster16_2015-16_to_2017-18.csv')
-    defense = False
-    forwards = False
-    if positions == 'Defense':
-        defense = True
-    elif positions == 'Forwards':
-        forwards = True
-    if defense:
-        data = data.loc[data['Pos'] == 'D']
-    elif forwards:
-        data = data.loc[data['Pos'] != 'D']
-    else:
-        data = data
-    data = divided_by_GP(['HD G', 'HD Sh', 'MD G', 'MD Sh', 'LD G', 'LD Sh'], data)
-    df_over30gp_oldindex = data.loc[data['GP'] > 30]
-    df_over30gp = df_over30gp_oldindex.reset_index(drop=True)
-    cluster_data = select_stats([stat1, stat2, stat3, stat4], df_over30gp)
+def prep_data(data, stat1, stat2, stat3, stat4):
+    cols = data.columns.tolist()
+    if cols.count('HD G') > 0:
+        data = divided_by_GP(['HD G', 'HD Sh', 'MD G', 'MD Sh', 'LD G', 'LD Sh'], data)
+    data = data.reset_index(drop=True)
+    cluster_data = select_stats([stat1, stat2, stat3, stat4], data)
 
     # normalize the features
     sc_X = StandardScaler()
@@ -164,8 +157,8 @@ def prep_data(stat1, stat2, stat3, stat4, positions):
 
     return cluster_data
 
-def cluster_visualization(stat1, stat2, stat3, stat4, positions):
-    cluster_data = prep_data(stat1, stat2, stat3, stat4, positions)
+def cluster_visualization(data, stat1, stat2, stat3, stat4):
+    cluster_data = prep_data(data, stat1, stat2, stat3, stat4)
     pca = PCA(n_components=2)
     cluster_data_2d = pca.fit_transform(cluster_data)
     cluster_data_2d = pd.DataFrame(cluster_data_2d)
@@ -188,16 +181,16 @@ def cluster_visualization(stat1, stat2, stat3, stat4, positions):
     plt.ylabel('PCA 2')
     plt.title('Clusters')
     plt.legend()
-    file = 'Cluster_Visualization.png'
+    file = 'images/Cluster_Visualization.png'
     if os.path.isfile(file):
-        os.remove(file)  # Opt.: os.system("rm "+strFile)
+        os.remove(file)
     plt.savefig(file)
     plt.cla()
     return
 
-def cluster_info(stat1, stat2, stat3, stat4, positions):
-    kmeans = KMeans(n_clusters = 4, init = 'k-means++', max_iter = 300, n_init=10, random_state = 0)
-    cluster_data = prep_data(stat1,stat2,stat3,stat4, positions)
+def cluster_info(data, stat1, stat2, stat3, stat4):
+    kmeans = KMeans(n_clusters=4, init='k-means++', max_iter=300, n_init=10, random_state=0)
+    cluster_data = prep_data(data, stat1, stat2, stat3, stat4)
     y_kmeans = kmeans.fit_predict(cluster_data)
     centroids = kmeans.cluster_centers_
     centroids = pd.DataFrame(centroids)
@@ -206,42 +199,46 @@ def cluster_info(stat1, stat2, stat3, stat4, positions):
     cluster_info = centroids.subtract(average_values, axis=1)
     return cluster_info
 
-def bar_graph(datac1, datac2, datac3, datac4):
+def bar_graph(stat1, stat2, stat3, stat4, stats):
+    datac0 = stats.loc[:, stat1]
+    datac1 = stats.loc[:, stat2]
+    datac2 = stats.loc[:, stat3]
+    datac3 = stats.loc[:, stat4]
     # create plot
-    fig, ax = plt.subplots()
+    plt.subplots()
     index = np.arange(4)
 
     bar_width = 0.2
     opacity = 0.8
 
-    cluster1 = plt.bar(index, datac1, bar_width,
-                    alpha=opacity,
-                    color='b',
-                    label='Cluster 1')
+    plt.bar(index, datac0, bar_width,
+            alpha=opacity,
+            color='b',
+            label='Cluster 0')
 
-    cluster2 = plt.bar(index + bar_width, datac2, bar_width,
-                    alpha=opacity,
-                    color='g',
-                    label='Cluster 2')
+    plt.bar(index + bar_width, datac1, bar_width,
+            alpha=opacity,
+            color='g',
+            label='Cluster 1')
 
-    cluster3 = plt.bar(index + 2 * bar_width, datac3, bar_width,
-                    alpha=opacity,
-                    color='r',
-                    label='Cluster 3')
+    plt.bar(index + 2 * bar_width, datac2, bar_width,
+            alpha=opacity,
+            color='r',
+            label='Cluster 2')
 
-    cluster4 = plt.bar(index + 3 * bar_width, datac4, bar_width,
-                    alpha=opacity,
-                    color='y',
-                    label='Cluster 4')
+    plt.bar(index + 3 * bar_width, datac3, bar_width,
+            alpha=opacity,
+            color='y',
+            label='Cluster 3')
 
 
     plt.xlabel('Clusters')
     plt.ylabel('Mean')
     plt.title('Statistic Means for each Cluster')
-    plt.xticks(index + bar_width, ('P', 'G', 'A', 'Sh'))
+    plt.xticks(index + bar_width, (stat1, stat2, stat3, stat4))
     plt.legend()
     plt.tight_layout()
-    file = 'bargraph.png'
+    file = 'images/bargraph.png'
     if os.path.isfile(file):
         os.remove(file)
     plt.savefig(file)
@@ -268,6 +265,43 @@ class Window(QDialog):
 
     def createLeftGroupBox(self):
         self.leftGroupBox = QGroupBox("Input Statistics")
+
+        leagueLabel = QLabel('League: ')
+        self.league = QComboBox()
+        self.allLeagues = QCheckBox("All Leagues")
+        hboxLeague = QHBoxLayout()
+        hboxLeague.addStretch()
+        hboxLeague.addWidget(leagueLabel)
+        hboxLeague.addWidget(self.league)
+        hboxLeague.addWidget(self.allLeagues)
+        hboxLeague.addStretch()
+
+        self.allLeagues.setCheckable(True)
+
+        startLabel = QLabel('Years: ')
+        self.start = QComboBox()
+        endLabel = QLabel('to')
+        self.end = QComboBox()
+        hboxYear = QHBoxLayout()
+        hboxYear.addStretch()
+        hboxYear.addWidget(startLabel)
+        hboxYear.addWidget(self.start)
+        hboxYear.addWidget(endLabel)
+        hboxYear.addWidget(self.end)
+        hboxYear.addStretch()
+
+        ageLabel = QLabel('Age: ')
+        self.age = QComboBox()
+        self.allAges = QCheckBox("All Ages")
+        hboxAge = QHBoxLayout()
+        hboxAge.addStretch()
+        hboxAge.addWidget(ageLabel)
+        hboxAge.addWidget(self.age)
+        hboxAge.addWidget(self.allAges)
+        hboxAge.addStretch()
+
+        self.allAges.setCheckable(True)
+        self.allAges.setChecked(True)
 
         self.allPlayers = QRadioButton("All Players")
         self.forwards = QRadioButton("Forwards")
@@ -323,15 +357,21 @@ class Window(QDialog):
         hboxEnter.addStretch()
 
         self.initialize_input()
+        self.league.currentTextChanged.connect(self.league_change)
+        self.allLeagues.toggled.connect(self.league.setDisabled)
+        self.start.currentTextChanged.connect(self.start_year_change)
+        self.end.currentTextChanged.connect(self.end_year_change)
+        self.allAges.toggled.connect(self.age.setDisabled)
         self.stat1.currentTextChanged.connect(self.update_stats)
         self.stat2.currentTextChanged.connect(self.update_stats)
         self.stat3.currentTextChanged.connect(self.update_stats)
         self.stat4.currentTextChanged.connect(self.update_stats)
         self.enterButton.clicked.connect(self.run_alg)
 
-        # connect forwards/defense
-
         layout = QVBoxLayout()
+        layout.addLayout(hboxLeague)
+        layout.addLayout(hboxYear)
+        layout.addLayout(hboxAge)
         layout.addLayout(hboxPosition)
         layout.addLayout(hboxStat1)
         layout.addLayout(hboxStat2)
@@ -341,30 +381,138 @@ class Window(QDialog):
         self.leftGroupBox.setLayout(layout)
 
     def initialize_input(self):
-        dirpath = os.getcwd()
-        df = pd.read_csv(dirpath + '/data/OHL_cluster16_2015-16_to_2017-18.csv')
-        stats = df.columns.tolist()
+        leagues = ['OHL', 'AHL', 'QMJHL', 'USHL', 'WHL']
+        self.league.addItems(leagues)
+
+        # update start years based on league
+        self.update_start_years()
+
+        # update end years based on start years
+        self.update_end_year()
+
+        # update ages based on league and years
+        self.update_age()
+        self.age.setDisabled(True)
+
+        if self.allLeagues.isChecked():
+            league = 'OHL_AHL_QMJHL_USHL_WHL'
+        else:
+            league = str(self.league.currentText())
+        start_year = str(self.start.currentText())
+        end_year = str(self.end.currentText())
+        if start_year == end_year:
+            file = 'data/' + league + '_' + start_year + '_skaters.csv'
+        else:
+            file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
+        data = pd.read_csv(file)
+        stats = data.columns.tolist()
         del stats[0:6]
 
-        statOne = stats[0]
-        statTwo = stats[1]
-        statThree = stats[2]
-        statFour = stats[3]
+        stat1 = stats[0]
+        stat2 = stats[1]
+        stat3 = stats[2]
+        stat4 = stats[3]
 
-        stats.remove(statOne)
-        stats.remove(statTwo)
-        stats.remove(statThree)
-        stats.remove(statFour)
+        stats.remove(stat1)
+        stats.remove(stat2)
+        stats.remove(stat3)
+        stats.remove(stat4)
 
-        self.stat1.addItem(statOne)
-        self.stat2.addItem(statTwo)
-        self.stat3.addItem(statThree)
-        self.stat4.addItem(statFour)
+        self.stat1.addItem(stat1)
+        self.stat2.addItem(stat2)
+        self.stat3.addItem(stat3)
+        self.stat4.addItem(stat4)
 
         self.stat1.addItems(stats)
         self.stat2.addItems(stats)
         self.stat3.addItems(stats)
         self.stat4.addItems(stats)
+
+    def league_change(self):
+        # update start years based on league
+        self.update_start_years()
+
+        # update end years based on start years
+        self.update_end_year()
+
+        # update stats based on league, start and end years, and team
+        self.update_stats()
+
+    def start_year_change(self):
+        # update end years based on start year
+        self.update_end_year()
+
+        # update stats based on league, start and end years, and team
+        self.update_stats()
+
+    def end_year_change(self):
+        # update stats based on league, start and end years, and team
+        self.update_stats()
+
+    def update_start_years(self):
+        # update start years based on league
+        league = str(self.league.currentText())
+        years = {'OHL': ['2018-19', '2017-18', '2016-17', '2015-16', '2014-15', '2013-14', '2012-13', '2011-12',
+                         '2010-11', '2009-10', '2008-09', '2007-08', '2006-07', '2005-06', '2004-05', '2003-04',
+                         '2002-03', '2001-02', '2000-01', '1999-00', '1998-99', '1997-98'],
+                 'AHL': ['2018-19', '2017-18', '2016-17', '2015-16', '2014-15', '2013-14', '2012-13', '2011-12',
+                         '2010-11', '2009-10', '2008-09', '2007-08', '2006-07', '2005-06'],
+                 'QMJHL': ['2018-19', '2017-18', '2016-17', '2015-16', '2014-15', '2013-14', '2012-13', '2011-12',
+                           '2010-11', '2009-10', '2008-09', '2007-08', '2006-07', '2005-06', '2004-05', '2003-04',
+                           '2002-03', '2001-02', '2000-01', '1999-00', '1998-99'],
+                 'USHL': ['2018-19', '2017-18', '2016-17', '2015-16', '2014-15', '2013-14', '2012-13', '2011-12',
+                          '2010-11', '2009-10', '2008-09', '2007-08', '2006-07', '2005-06', '2004-05', '2003-04',
+                          '2002-03'],
+                 'WHL': ['2018-19', '2017-18', '2016-17', '2015-16', '2014-15', '2013-14', '2012-13', '2011-12',
+                         '2010-11', '2009-10', '2008-09', '2007-08', '2006-07', '2005-06', '2004-05', '2003-04',
+                         '2002-03', '2001-02', '2000-01', '1999-00', '1998-99', '1997-98', '1996-97']}
+        self.start.blockSignals(True)
+        self.start.clear()
+        self.start.addItems(years[league])
+        self.start.blockSignals(False)
+
+    def update_end_year(self):
+        # update end years based on start years
+        end = str(self.end.currentText())
+        start = str(self.start.currentText())
+        self.end.blockSignals(True)
+        self.end.clear()
+        start_year = int(start[0:4])
+        years = []
+        for year in range(start_year, 2019):
+            years.append(str(year) + '-' + str(year + 1)[2:4])
+        years = list(reversed(years))
+        self.end.addItems(years)
+        self.end.setCurrentText(end)
+        self.end.blockSignals(False)
+
+    def update_age(self):
+        if self.allLeagues.isChecked():
+            league = 'OHL_AHL_QMJHL_USHL_WHL'
+        else:
+            league = str(self.league.currentText())
+        start_year = str(self.start.currentText())
+        end_year = str(self.end.currentText())
+        if start_year == end_year:
+            file = 'data/' + league + '_' + start_year + '_skaters.csv'
+        else:
+            file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
+        data = pd.read_csv(file)
+        data = data.loc[data['GP'] > 30]
+        if self.allPlayers.isChecked():
+            positions = 'All'
+        elif self.forwards.isChecked():
+            positions = 'Forwards'
+        else:
+            positions = 'Defense'
+        data = select_position(data, positions)
+        ages = []
+        for index, row in data.iterrows():
+            if ages.count(int(row['Age'])) == 0:
+                ages.append(int(row['Age']))
+        ages.sort()
+        ages = [str(age) for age in ages]
+        self.age.addItems(ages)
 
     def update_stats(self):
 
@@ -372,29 +520,42 @@ class Window(QDialog):
         self.stat2.blockSignals(True)
         self.stat3.blockSignals(True)
         self.stat4.blockSignals(True)
-        statOne = str(self.stat1.currentText())
-        statTwo = str(self.stat2.currentText())
-        statThree = str(self.stat3.currentText())
-        statFour = str(self.stat4.currentText())
+        stat1 = str(self.stat1.currentText())
+        stat2 = str(self.stat2.currentText())
+        stat3 = str(self.stat3.currentText())
+        stat4 = str(self.stat4.currentText())
 
         self.stat1.clear()
         self.stat2.clear()
         self.stat3.clear()
         self.stat4.clear()
 
-        dirpath = os.getcwd()
-        df = pd.read_csv(dirpath + '/data/OHL_cluster16_2015-16_to_2017-18.csv')
-        stats = df.columns.tolist()
+        if self.allLeagues.isChecked():
+            league = 'OHL_AHL_QMJHL_USHL_WHL'
+        else:
+            league = str(self.league.currentText())
+        start_year = str(self.start.currentText())
+        end_year = str(self.end.currentText())
+        if start_year == end_year:
+            file = 'data/' + league + '_' + start_year + '_skaters.csv'
+        else:
+            file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
+        data = pd.read_csv(file)
+        stats = data.columns.tolist()
         del stats[0:6]
-        stats.remove(statOne)
-        stats.remove(statTwo)
-        stats.remove(statThree)
-        stats.remove(statFour)
+        if stats.count(stat1) > 0:
+            stats.remove(stat1)
+        if stats.count(stat2) > 0:
+            stats.remove(stat2)
+        if stats.count(stat3) > 0:
+            stats.remove(stat3)
+        if stats.count(stat4) > 0:
+            stats.remove(stat4)
 
-        self.stat1.addItem(statOne)
-        self.stat2.addItem(statTwo)
-        self.stat3.addItem(statThree)
-        self.stat4.addItem(statFour)
+        self.stat1.addItem(stat1)
+        self.stat2.addItem(stat2)
+        self.stat3.addItem(stat3)
+        self.stat4.addItem(stat4)
 
         self.stat1.addItems(stats)
         self.stat2.addItems(stats)
@@ -407,31 +568,45 @@ class Window(QDialog):
         self.stat4.blockSignals(False)
 
     def run_alg(self):
+        if self.allLeagues.isChecked():
+            league = 'OHL_AHL_QMJHL_USHL_WHL'
+        else:
+            league = str(self.league.currentText())
+        start_year = str(self.start.currentText())
+        end_year = str(self.end.currentText())
+        if start_year == end_year:
+            file = 'data/' + league + '_' + start_year + '_skaters.csv'
+        else:
+            file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
+        data = pd.read_csv(file)
+        if self.allAges.isChecked():
+            age = 0
+        else:
+            age = str(self.age.currentText())
         if self.allPlayers.isChecked():
             positions = 'All'
         elif self.forwards.isChecked():
             positions = 'Forwards'
         else:
             positions = 'Defense'
-        statOne = str(self.stat1.currentText())
-        statTwo = str(self.stat2.currentText())
-        statThree = str(self.stat3.currentText())
-        statFour = str(self.stat4.currentText())
-        df = cluster(statOne, statTwo, statThree, statFour, positions)
-        stats = cluster_info(statOne, statTwo, statThree, statFour, positions)
-        c1stats = stats.loc[:, statOne]
-        c2stats = stats.loc[:, statTwo]
-        c3stats = stats.loc[:, statThree]
-        c4stats = stats.loc[:, statFour]
-        bar_graph(c1stats, c2stats, c3stats, c4stats)
-        cluster_visualization(statOne, statTwo, statThree, statFour, positions)
+        data = data.loc[data['GP'] > 30]
+        data = select_age(data, age)
+        data = select_position(data, positions)
+        stat1 = str(self.stat1.currentText())
+        stat2 = str(self.stat2.currentText())
+        stat3 = str(self.stat3.currentText())
+        stat4 = str(self.stat4.currentText())
+        cluster(data, stat1, stat2, stat3, stat4)
+        stats = cluster_info(data, stat1, stat2, stat3, stat4)
+        bar_graph(stat1, stat2, stat3, stat4, stats)
+        cluster_visualization(data, stat1, stat2, stat3, stat4)
         self.update_playerList()
         self.update_pics()
 
 
     def update_pics(self):
-        bargraph = QPixmap('bargraph.png')
-        smaller = bargraph.scaled(600, 600, Qt.KeepAspectRatio, Qt.FastTransformation)
+        bargraph = QPixmap('images/bargraph.png')
+        smaller = bargraph.scaled(800, 800, Qt.KeepAspectRatio, Qt.FastTransformation)
         labelBarGraph = QLabel("Bar Graph")
         labelBarGraph.setPixmap(smaller)
         for i in range(self.layoutBarGraph.count()):
@@ -439,8 +614,8 @@ class Window(QDialog):
                 self.layoutBarGraph.itemAt(i).widget().close()
         self.layoutBarGraph.addWidget(labelBarGraph)
 
-        seeClusters = QPixmap('Cluster_Visualization.png')
-        smaller_pic = seeClusters.scaled(600, 600, Qt.KeepAspectRatio, Qt.FastTransformation)
+        seeClusters = QPixmap('images/Cluster_Visualization.png')
+        smaller_pic = seeClusters.scaled(800, 800, Qt.KeepAspectRatio, Qt.FastTransformation)
         labelSeeClusters = QLabel("Cluster Visualization")
         labelSeeClusters.setPixmap(smaller_pic)
         for i in range(self.layoutSeeCluster.count()):
@@ -456,9 +631,9 @@ class Window(QDialog):
         barGraphTab = QWidget()
         seeClusterTab = QWidget()
         clusterWinTab = QWidget()
-        self.rightWidget.addTab(playerListTab, "Cluster Player List")
+        self.rightWidget.addTab(playerListTab, "Player List")
         self.rightWidget.addTab(barGraphTab, "Cluster Statistics")
-        self.rightWidget.addTab(seeClusterTab, "Cluster Visualization")
+        self.rightWidget.addTab(seeClusterTab, "Visualization")
         self.rightWidget.addTab(clusterWinTab, "Percentage of Players in Cluster vs Wins")
 
         hboxClusterChoice1 = QHBoxLayout()
@@ -480,19 +655,16 @@ class Window(QDialog):
         layoutPlayerList.addLayout(hboxPlayerList)
         playerListTab.setLayout(layoutPlayerList)
 
-        self.initialize_playerList()
-        self.clusterChoice1.currentTextChanged.connect(self.update_playerList)
-
-        bargraph = QPixmap('bargraph.png')
-        smaller_image = bargraph.scaled(600, 600, Qt.KeepAspectRatio, Qt.FastTransformation)
+        bargraph = QPixmap('images/bargraph.png')
+        smaller_image = bargraph.scaled(800, 800, Qt.KeepAspectRatio, Qt.FastTransformation)
         labelBarGraph = QLabel("Bar Graph")
         labelBarGraph.setPixmap(smaller_image)
         self.layoutBarGraph = QVBoxLayout()
         self.layoutBarGraph.addWidget(labelBarGraph)
         barGraphTab.setLayout(self.layoutBarGraph)
 
-        clusters = QPixmap('Cluster_Visualization.png')
-        smaller_image = clusters.scaled(600, 600, Qt.KeepAspectRatio, Qt.FastTransformation)
+        clusters = QPixmap('images/Cluster_Visualization.png')
+        smaller_image = clusters.scaled(800, 800, Qt.KeepAspectRatio, Qt.FastTransformation)
         labelSeeClusters = QLabel("Clusters")
         labelSeeClusters.setPixmap(smaller_image)
         self.layoutSeeCluster = QVBoxLayout()
@@ -507,8 +679,8 @@ class Window(QDialog):
         hboxClusterChoice2.addWidget(self.clusterChoice2)
         hboxClusterChoice2.addStretch()
 
-        clusterVSWin = QPixmap('Cluster_0.png')
-        smaller_image = clusterVSWin.scaled(600, 600, Qt.KeepAspectRatio, Qt.FastTransformation)
+        clusterVSWin = QPixmap('images/Cluster_0.png')
+        smaller_image = clusterVSWin.scaled(800, 800, Qt.KeepAspectRatio, Qt.FastTransformation)
         labelClusterVSWin = QLabel("Cluster vs Wins")
         labelClusterVSWin.setPixmap(smaller_image)
         self.layoutClusterVSWin = QVBoxLayout()
@@ -516,20 +688,22 @@ class Window(QDialog):
         self.layoutClusterVSWin.addWidget(labelClusterVSWin)
         clusterWinTab.setLayout(self.layoutClusterVSWin)
 
-        self.initialize_clusterVSwin()
         self.clusterChoice2.currentTextChanged.connect(self.update_clusterVSwin)
+        self.initialize_clusters()
+        self.clusterChoice1.currentTextChanged.connect(self.update_playerList)
+        self.playerList.setSelectionMode(QAbstractItemView.ExtendedSelection)
 
-    def initialize_playerList(self):
+    def initialize_clusters(self):
 
         self.clusterChoice1.addItems(['0', '1', '2', '3'])
+        self.clusterChoice2.addItems(['0', '1', '2', '3'])
 
     def update_playerList(self):
         self.playerList.blockSignals(True)
         cluster = str(self.clusterChoice1.currentText())
         self.playerList.clear()
 
-        dirpath = os.getcwd()
-        df = pd.read_csv(dirpath + '/data/df_withclusters.csv')
+        df = pd.read_csv('df_withclusters.csv')
         players = []
         for index, row in df.iterrows():
             if str(row['Cluster']) == str(cluster):
@@ -538,14 +712,11 @@ class Window(QDialog):
         self.playerList.addItems(players)
         self.playerList.blockSignals(False)
 
-    def initialize_clusterVSwin(self):
-        self.clusterChoice2.addItems(['0', '1', '2', '3'])
-
     def update_clusterVSwin(self):
         cluster = str(self.clusterChoice2.currentText())
-        pic = 'Cluster_' + cluster + '.png'
+        pic = 'images/Cluster_' + cluster + '.png'
         pixmap = QPixmap(pic)
-        smaller_rink = pixmap.scaled(600, 600, Qt.KeepAspectRatio, Qt.FastTransformation)
+        smaller_rink = pixmap.scaled(800, 800, Qt.KeepAspectRatio, Qt.FastTransformation)
         labelClusterVSWin = QLabel("Cluster Vs Wins")
         labelClusterVSWin.setPixmap(smaller_rink)
         for i in range(self.layoutClusterVSWin.count()):
