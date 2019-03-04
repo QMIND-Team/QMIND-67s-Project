@@ -154,7 +154,7 @@ def download_all_year_combos(leagues=['OHL'], start_season='2017-18', end_season
                         merge(csvs=csvs[start_idx:end_idx + 1], filename=filename, sort=sort, one_league=True)
     return
 
-def get_cluster_data(years = ['2015-16', '2016-17', '2017-18'], already_downloaded=True):
+def get_cluster_data(years=['2015-16', '2016-17', '2017-18'], already_downloaded=True):
     if not already_downloaded:
         download_multiple(leagues=['OHL'], seasons=['2015-16', '2016-17', '2017-18'], players=['skaters'], strength=[' '])
 
