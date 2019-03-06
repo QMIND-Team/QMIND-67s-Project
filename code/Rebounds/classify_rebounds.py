@@ -47,7 +47,7 @@ def royal_road(df):
                 df.loc[(index + 1), ('royal_road')] = 1
     return df
 
-def rebound_type(df, time_column):
+def rebound_type(df, time_column, seconds):
     """This function adds 4 new columns in the data frame depicting what kind of rebound each shot is.
 
         Args:
@@ -70,17 +70,17 @@ def rebound_type(df, time_column):
     df['reb2'] = 0
     df['reb3'] = 0
 
-    for i in range(0, df.shape[0]-1):
-        time_bw_shots = df.loc[i + 1, time_column] - df.loc[i, time_column]
-        if time_bw_shots <= 3:
-            df.loc[(i + 1), ('reb')] = 1
+    for i in range(df.shape[0]-1):
+        time_bw_shots = df[time_column].iloc[i + 1] - df[time_column].iloc[i]
+        if time_bw_shots <= seconds:
+            df[df[index].iloc[i + 1],'reb'] = 1
             if time_bw_shots <= 2:
                 if time_bw_shots <= 1:
-                    df.loc[(i + 1), ('reb1')] = 1
+                    df[df[index].iloc[i + 1],'reb1'] = 1
                 else:
-                    df.loc[(i + 1), ('reb2')] = 1
-            else:
-                df.loc[(i + 1), ('reb3')] = 1
+                    df[df[index].iloc[i + 1],'reb2'] = 1
+            elif time_bw_shots <= 3:
+                df[df[index].iloc[i + 1],'reb3'] = 1
     return df
 
 def polar_coords(df ):
