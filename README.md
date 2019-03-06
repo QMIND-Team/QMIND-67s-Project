@@ -5,13 +5,13 @@
 - **Willem Atack**
 - **Hayden Wang**
 - **Andrew Sergejewich**
-- **Ian Ho**
+- **Ian Ho** 
 
-`cluster_GUI.py`
-> This GUI used the data collected from the OHL-webscraper and a K-Means clustering algorithm to cluster players into 4 groups.  The GUI allows users to choose the league, years, age and stats they want used in the clustering and displays a list of players in each cluster, a 2D visualization of the clusters and a bar graph to compare the average normalized statistics for each cluster.
+`OHL Clustering`
+> This project collects data using a webscraper and applies a K-Means clustering algorithm to cluster players into four groups based on four different player stats.  A GUI was created to allow a user to be able to choose the data and stats used to cluster and then display the lists of players in each cluster, a graphical representation of the average normalized stats for each cluster and a 2D visualization of the clusters.
 
-`rebound_analysis.ipnb`
+`NHL Clustering`
 > **add descriptions here**
 
-`NHL_clustering`
+`Rebound Analysis`
 > **add descriptions here**
