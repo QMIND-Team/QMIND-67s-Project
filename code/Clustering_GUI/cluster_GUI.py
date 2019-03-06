@@ -1,4 +1,6 @@
-import sys, os, re
+import sys
+import os
+import re
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,16 +9,23 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QDateTime, Qt, QTimer, pyqtSlot, QModelIndex
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
-                             QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                             QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
-                             QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-                             QVBoxLayout, QWidget, QToolBar, QInputDialog, QListWidget, QAbstractItemView,
-                             QGraphicsPixmapItem)
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit, QDial,
+                             QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
+                             QLineEdit, QProgressBar, QPushButton, QRadioButton,
+                             QScrollBar, QSizePolicy, QSlider, QSpinBox, QStyleFactory,
+                             QTableWidget, QTabWidget, QTextEdit, QVBoxLayout, QWidget,
+                             QToolBar, QInputDialog, QListWidget, QAbstractItemView,
+                             QGraphicsPixmapItem, QMessageBox)
 
 
 
 def select_age(df, age):
+    """
+    Returns only the data containing players within a certain age range.
+    :param df: The data frame containing the data.
+    :param age: The age of players wanted.
+    :return: The new data frame with only players in a certain age range.
+    """
     if age != 0:
         df = df.loc[df['Age'] >= int(age)]
         return df.loc[df['Age'] < int(age) + 1]
@@ -24,6 +33,12 @@ def select_age(df, age):
         return df
 
 def select_position(df, positions):
+    """
+    Returns only the data containing players that play a certain position.
+    :param df: The data frame containing the data.
+    :param positions: The position wanted.
+    :return: The new data frame with only players that play that position.
+    """
     if positions == 'Defense':
         return df.loc[df['Pos'] == 'D']
     elif positions == 'Forwards':
@@ -31,25 +46,34 @@ def select_position(df, positions):
     else:
         return df
 
-## determine which stats you would like to cluster with
-## insert column names in an array and the dataset you would like to select from
-
 def select_stats(stats, dataset):
+    """
+    Returns a new data set containing only the wanted stats.
+    :param stats: The column names for the wanted stats.
+    :param dataset: The original data set.
+    :return: The new data set containing only the wanted stats.
+    """
     df = dataset.loc[:, stats]
     return df
 
-## editing the dataset to include all per/game stats
-## input the dataset and the stats you want to divide by games
-
 def divided_by_GP(stats, dataset):
+    """
+    Returns data set with added columns containing stats/GP.
+    :param stats: Stats used to create per game stats.
+    :param dataset: Original data set.
+    :return: The new data set with new stat columns.
+    """
     GP_vector = dataset.loc[:, 'GP']
     dataset.loc[:,stats] = dataset.loc[:, stats].div(GP_vector, axis = 0)
     return dataset
 
-## this function is to select all the players from one team
-## input the team you would like to select as a string and the dataset
-
 def select_team(team, dataset):
+    """
+    Returns data set with players only from one team.
+    :param team: Name of team.
+    :param dataset: Original data set.
+    :return: New data set only with players from particular team.
+    """
     dataset['temp'] = 0
     length = len(team) + 1
     temp1 = team + '/'
@@ -70,24 +94,32 @@ def select_team(team, dataset):
     new_df = new_df.iloc[:, :-1]
     return new_df
 
-## this function is to select all the players of a certain cluster
-## input the dataset and the cluster you would like to select
-
 def select_cluster(cluster, dataset):
+    """
+    Returns new dataset with players from particular cluster.
+    :param cluster: Cluster number wanted.
+    :param dataset: Original data set.
+    :return: New data set with only players from wanted cluster.
+    """
     new_df = dataset[dataset['Cluster'] == cluster]
     return new_df
 
-## this function is meant to sort players by their cluster
-## just input the dataset
-
 def sort_by_cluster(dataset):
+    """
+    Sorts players by cluster.
+    :param dataset: Unsorted dataset.
+    :return: Sorted dataset.
+    """
     new_df = dataset.sort_values('Cluster')
     return new_df
 
-## this function counts the number of times a particular value shows up in the cluster column
-## input the dataset and the particular value you wish to count
-
 def cluster_counter(value, dataset):
+    """
+    Counts number of players in each cluster.
+    :param value: Cluster number.
+    :param dataset: Original dataset.
+    :return: Number of players in cluster.
+    """
     N = dataset.shape[0]
     count = 0
     for i in range (0, N):
@@ -95,10 +127,14 @@ def cluster_counter(value, dataset):
             count = count + 1
     return count
 
-## this functions adds a team's cluster vector to the new dataset which includes information about all teams
-## input the team name as a string in a datafrane, dthe dataset, and the new dataset
-
 def add_team2df(team_name, dataset, new_dataset):
+    """
+    Adds a team's cluster vector to the new data set which includes information about all teams
+    :param team_name: Name of team.
+    :param dataset: Original data set.
+    :param new_dataset: New data set to get cluster column added.
+    :return: New dataset.
+    """
     dataset = dataset.reset_index(drop=True)
     team_cluster = []
     for i in range(0, 4):
@@ -109,18 +145,29 @@ def add_team2df(team_name, dataset, new_dataset):
     new_dataset = new_dataset.append([team_cluster])
     return new_dataset
 
-## this function finds the percentage of elements in one row of a column
-## input the dataset
-
 def find_percentages(dataset):
+    """
+    Finds percentage of elements in one row of a columns.
+    :param dataset: Original data set.
+    :return: New data set.
+    """
     N = dataset.shape[0]
     new_df = dataset.copy(deep=True)
-    for i in range (0,N):
+    for i in range(0, N):
         sum = new_df.iloc[i, 1:].sum()
         new_df.iloc[i, 1:] = 100*new_df.iloc[i, 1:].div(sum)
     return new_df
 
 def cluster(data, stat1, stat2, stat3, stat4):
+    """
+    Runs k-means clustering algorithm on data to cluster players.
+    :param data: Dataset.
+    :param stat1: First stat used to cluster.
+    :param stat2: Second stat used to cluster.
+    :param stat3: Third stat used to cluster.
+    :param stat4: Fourth stat used to cluster.
+    :return: Results of algorithm with cluster number column added to each player.
+    """
     # prepare data
     cols = data.columns.tolist()
     if cols.count('HD G') > 0:
@@ -145,6 +192,15 @@ def cluster(data, stat1, stat2, stat3, stat4):
     return fullresults
 
 def prep_data(data, stat1, stat2, stat3, stat4):
+    """
+    Prepares the data to be used by adding per game stats to data.
+    :param data: Original dataset.
+    :param stat1: First stat used.
+    :param stat2: Second stat used.
+    :param stat3: Third stat used.
+    :param stat4: Fourth stat used.
+    :return: New dataset.
+    """
     cols = data.columns.tolist()
     if cols.count('HD G') > 0:
         data = divided_by_GP(['HD G', 'HD Sh', 'MD G', 'MD Sh', 'LD G', 'LD Sh'], data)
@@ -158,6 +214,15 @@ def prep_data(data, stat1, stat2, stat3, stat4):
     return cluster_data
 
 def cluster_visualization(data, stat1, stat2, stat3, stat4):
+    """
+    Creates .png file visualizing the clusters.
+    :param data: Data set.
+    :param stat1: First stat used to cluster.
+    :param stat2: Second stat used to cluster.
+    :param stat3: Third stat used to cluster.
+    :param stat4: Fourth stat used to cluster.
+    :return: void
+    """
     cluster_data = prep_data(data, stat1, stat2, stat3, stat4)
     pca = PCA(n_components=2)
     cluster_data_2d = pca.fit_transform(cluster_data)
@@ -189,6 +254,15 @@ def cluster_visualization(data, stat1, stat2, stat3, stat4):
     return
 
 def cluster_info(data, stat1, stat2, stat3, stat4):
+    """
+    Returns normalized average stats for each cluster.
+    :param data: Data for clusters.
+    :param stat1: First stat used to cluster.
+    :param stat2: Second stat used to cluster.
+    :param stat3: Third stat used to cluster.
+    :param stat4: Fourth stat used to cluster.
+    :return: New normalized cluster averages for each stat.
+    """
     kmeans = KMeans(n_clusters=4, init='k-means++', max_iter=300, n_init=10, random_state=0)
     cluster_data = prep_data(data, stat1, stat2, stat3, stat4)
     y_kmeans = kmeans.fit_predict(cluster_data)
@@ -200,6 +274,15 @@ def cluster_info(data, stat1, stat2, stat3, stat4):
     return cluster_info
 
 def bar_graph(stat1, stat2, stat3, stat4, stats):
+    """
+    Creates a bargraph showing the data returned from cluster_info() and saves it as a .png.
+    :param stat1: First stat used to cluster.
+    :param stat2: Second stat used to cluster.
+    :param stat3: Third stat used to cluster.
+    :param stat4: Fourth stat used to cluster.
+    :param stats: data from cluster_info().
+    :return: void
+    """
     datac0 = stats.loc[:, stat1]
     datac1 = stats.loc[:, stat2]
     datac2 = stats.loc[:, stat3]
@@ -245,6 +328,9 @@ def bar_graph(stat1, stat2, stat3, stat4, stats):
     plt.cla()
 
 class Window(QDialog):
+    """
+    This class creates the PyQt5 Window and all the widgets to create the GUI.
+    """
 
     def __init__(self):
         super().__init__()
@@ -273,7 +359,7 @@ class Window(QDialog):
         hboxLeague.addStretch()
         hboxLeague.addWidget(leagueLabel)
         hboxLeague.addWidget(self.league)
-        hboxLeague.addWidget(self.allLeagues)
+        #hboxLeague.addWidget(self.allLeagues)
         hboxLeague.addStretch()
 
         self.allLeagues.setCheckable(True)
@@ -404,29 +490,33 @@ class Window(QDialog):
             file = 'data/' + league + '_' + start_year + '_skaters.csv'
         else:
             file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
-        data = pd.read_csv(file)
-        stats = data.columns.tolist()
-        del stats[0:6]
+        try:
+            data = pd.read_csv(file)
+            stats = data.columns.tolist()
+            del stats[0:6]
 
-        stat1 = stats[0]
-        stat2 = stats[1]
-        stat3 = stats[2]
-        stat4 = stats[3]
+            stat1 = stats[0]
+            stat2 = stats[1]
+            stat3 = stats[2]
+            stat4 = stats[3]
 
-        stats.remove(stat1)
-        stats.remove(stat2)
-        stats.remove(stat3)
-        stats.remove(stat4)
+            stats.remove(stat1)
+            stats.remove(stat2)
+            stats.remove(stat3)
+            stats.remove(stat4)
 
-        self.stat1.addItem(stat1)
-        self.stat2.addItem(stat2)
-        self.stat3.addItem(stat3)
-        self.stat4.addItem(stat4)
+            self.stat1.addItem(stat1)
+            self.stat2.addItem(stat2)
+            self.stat3.addItem(stat3)
+            self.stat4.addItem(stat4)
 
-        self.stat1.addItems(stats)
-        self.stat2.addItems(stats)
-        self.stat3.addItems(stats)
-        self.stat4.addItems(stats)
+            self.stat1.addItems(stats)
+            self.stat2.addItems(stats)
+            self.stat3.addItems(stats)
+            self.stat4.addItems(stats)
+        except FileNotFoundError:
+            QMessageBox.about(self, 'Error', "The data is not available")
+
 
     def league_change(self):
         # update start years based on league
@@ -435,6 +525,9 @@ class Window(QDialog):
         # update end years based on start years
         self.update_end_year()
 
+        # update age based on league and years
+        self.update_age()
+
         # update stats based on league, start and end years, and team
         self.update_stats()
 
@@ -442,10 +535,16 @@ class Window(QDialog):
         # update end years based on start year
         self.update_end_year()
 
+        # update age based on league and years
+        self.update_age()
+
         # update stats based on league, start and end years, and team
         self.update_stats()
 
     def end_year_change(self):
+        # update age based on league and years
+        self.update_age()
+
         # update stats based on league, start and end years, and team
         self.update_stats()
 
@@ -497,39 +596,34 @@ class Window(QDialog):
             file = 'data/' + league + '_' + start_year + '_skaters.csv'
         else:
             file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
-        data = pd.read_csv(file)
-        data = data.loc[data['GP'] > 30]
-        if self.allPlayers.isChecked():
-            positions = 'All'
-        elif self.forwards.isChecked():
-            positions = 'Forwards'
-        else:
-            positions = 'Defense'
-        data = select_position(data, positions)
-        ages = []
-        for index, row in data.iterrows():
-            if ages.count(int(row['Age'])) == 0:
-                ages.append(int(row['Age']))
-        ages.sort()
-        ages = [str(age) for age in ages]
-        self.age.addItems(ages)
+        try:
+            data = pd.read_csv(file)
+            data = data.loc[data['GP'] > 30]
+            if self.allPlayers.isChecked():
+                positions = 'All'
+            elif self.forwards.isChecked():
+                positions = 'Forwards'
+            else:
+                positions = 'Defense'
+            data = select_position(data, positions)
+            ages = []
+            for index, row in data.iterrows():
+                if ages.count(int(row['Age'])) == 0:
+                    ages.append(int(row['Age']))
+            ages.sort()
+            ages = [str(age) for age in ages]
+            self.age.blockSignals(True)
+            self.age.clear()
+            self.age.addItems(ages)
+            self.age.blockSignals(False)
+        except FileNotFoundError:
+            QMessageBox.about(self, 'Error', "The data is not available")
 
     def update_stats(self):
-
-        self.stat1.blockSignals(True)
-        self.stat2.blockSignals(True)
-        self.stat3.blockSignals(True)
-        self.stat4.blockSignals(True)
         stat1 = str(self.stat1.currentText())
         stat2 = str(self.stat2.currentText())
         stat3 = str(self.stat3.currentText())
         stat4 = str(self.stat4.currentText())
-
-        self.stat1.clear()
-        self.stat2.clear()
-        self.stat3.clear()
-        self.stat4.clear()
-
         if self.allLeagues.isChecked():
             league = 'OHL_AHL_QMJHL_USHL_WHL'
         else:
@@ -540,32 +634,45 @@ class Window(QDialog):
             file = 'data/' + league + '_' + start_year + '_skaters.csv'
         else:
             file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
-        data = pd.read_csv(file)
-        stats = data.columns.tolist()
-        del stats[0:6]
-        if stats.count(stat1) > 0:
-            stats.remove(stat1)
-        if stats.count(stat2) > 0:
-            stats.remove(stat2)
-        if stats.count(stat3) > 0:
-            stats.remove(stat3)
-        if stats.count(stat4) > 0:
-            stats.remove(stat4)
+        try:
+            data = pd.read_csv(file)
+            stats = data.columns.tolist()
+            del stats[0:6]
+            if stats.count(stat1) > 0:
+                stats.remove(stat1)
+            if stats.count(stat2) > 0:
+                stats.remove(stat2)
+            if stats.count(stat3) > 0:
+                stats.remove(stat3)
+            if stats.count(stat4) > 0:
+                stats.remove(stat4)
 
-        self.stat1.addItem(stat1)
-        self.stat2.addItem(stat2)
-        self.stat3.addItem(stat3)
-        self.stat4.addItem(stat4)
+            self.stat1.blockSignals(True)
+            self.stat2.blockSignals(True)
+            self.stat3.blockSignals(True)
+            self.stat4.blockSignals(True)
 
-        self.stat1.addItems(stats)
-        self.stat2.addItems(stats)
-        self.stat3.addItems(stats)
-        self.stat4.addItems(stats)
+            self.stat1.clear()
+            self.stat2.clear()
+            self.stat3.clear()
+            self.stat4.clear()
 
-        self.stat1.blockSignals(False)
-        self.stat2.blockSignals(False)
-        self.stat3.blockSignals(False)
-        self.stat4.blockSignals(False)
+            self.stat1.addItem(stat1)
+            self.stat2.addItem(stat2)
+            self.stat3.addItem(stat3)
+            self.stat4.addItem(stat4)
+
+            self.stat1.addItems(stats)
+            self.stat2.addItems(stats)
+            self.stat3.addItems(stats)
+            self.stat4.addItems(stats)
+
+            self.stat1.blockSignals(False)
+            self.stat2.blockSignals(False)
+            self.stat3.blockSignals(False)
+            self.stat4.blockSignals(False)
+        except FileNotFoundError:
+            QMessageBox.about(self, 'Error', "The data is not available")
 
     def run_alg(self):
         if self.allLeagues.isChecked():
@@ -578,30 +685,37 @@ class Window(QDialog):
             file = 'data/' + league + '_' + start_year + '_skaters.csv'
         else:
             file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
-        data = pd.read_csv(file)
-        if self.allAges.isChecked():
-            age = 0
-        else:
-            age = str(self.age.currentText())
-        if self.allPlayers.isChecked():
-            positions = 'All'
-        elif self.forwards.isChecked():
-            positions = 'Forwards'
-        else:
-            positions = 'Defense'
-        data = data.loc[data['GP'] > 30]
-        data = select_age(data, age)
-        data = select_position(data, positions)
-        stat1 = str(self.stat1.currentText())
-        stat2 = str(self.stat2.currentText())
-        stat3 = str(self.stat3.currentText())
-        stat4 = str(self.stat4.currentText())
-        cluster(data, stat1, stat2, stat3, stat4)
-        stats = cluster_info(data, stat1, stat2, stat3, stat4)
-        bar_graph(stat1, stat2, stat3, stat4, stats)
-        cluster_visualization(data, stat1, stat2, stat3, stat4)
-        self.update_playerList()
-        self.update_pics()
+        try:
+            data = pd.read_csv(file)
+            if self.allAges.isChecked():
+                age = 0
+            else:
+                age = str(self.age.currentText())
+            if self.allPlayers.isChecked():
+                positions = 'All'
+            elif self.forwards.isChecked():
+                positions = 'Forwards'
+            else:
+                positions = 'Defense'
+            data = data.loc[data['GP'] > 30]
+            data = select_age(data, age)
+            data = select_position(data, positions)
+            if data.shape[0] < 4:
+                QMessageBox.about(self, 'Error', "There are not enough players in this group to cluster.")
+                return
+            stat1 = str(self.stat1.currentText())
+            stat2 = str(self.stat2.currentText())
+            stat3 = str(self.stat3.currentText())
+            stat4 = str(self.stat4.currentText())
+            cluster(data, stat1, stat2, stat3, stat4)
+            stats = cluster_info(data, stat1, stat2, stat3, stat4)
+            bar_graph(stat1, stat2, stat3, stat4, stats)
+            cluster_visualization(data, stat1, stat2, stat3, stat4)
+            self.update_playerList()
+            self.update_pics()
+        except FileNotFoundError:
+            QMessageBox.about(self, 'Error', "The data is not available")
+
 
 
     def update_pics(self):
@@ -634,7 +748,7 @@ class Window(QDialog):
         self.rightWidget.addTab(playerListTab, "Player List")
         self.rightWidget.addTab(barGraphTab, "Cluster Statistics")
         self.rightWidget.addTab(seeClusterTab, "Visualization")
-        self.rightWidget.addTab(clusterWinTab, "Percentage of Players in Cluster vs Wins")
+        #self.rightWidget.addTab(clusterWinTab, "Percentage of Players in Cluster vs Wins")
 
         hboxClusterChoice1 = QHBoxLayout()
         hboxClusterChoice1.addStretch()
