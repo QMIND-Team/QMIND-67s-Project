@@ -47,11 +47,12 @@ def royal_road(df):
                 df.loc[(index + 1), ('royal_road')] = 1
     return df
 
-def rebound_type(df):
+def rebound_type(df, time_column, seconds):
     """This function adds 4 new columns in the data frame depicting what kind of rebound each shot is.
 
         Args:
             df (data frame): The set of shots you want to evaluate.
+            - time colummn must be a integer
 
         Returns:
             df (data frame): The updated data set with a 1 or 0 in each of the four columns.
@@ -69,19 +70,20 @@ def rebound_type(df):
     df['reb2'] = 0
     df['reb3'] = 0
 
-    for index in range(0, df.shape[0]-1):
-        if df.loc[(index + 1), ('time')] - df.loc[(index), ('time')] <= 3:
-            df.loc[(index + 1), ('reb')] = 1
-            if df.loc[(index + 1), ('time')] - df.loc[(index), ('time')] <= 2:
-                if df.loc[(index + 1), ('time')] - df.loc[(index), ('time')] <= 1:
-                    df.loc[(index + 1), ('reb1')] = 1
+    for i in range(df.shape[0]-1):
+        time_bw_shots = df[time_column].iloc[i + 1] - df[time_column].iloc[i]
+        if time_bw_shots <= seconds:
+            df[df[index].iloc[i + 1],'reb'] = 1
+            if time_bw_shots <= 2:
+                if time_bw_shots <= 1:
+                    df[df[index].iloc[i + 1],'reb1'] = 1
                 else:
-                    df.loc[(index + 1), ('reb2')] = 1
-            else:
-                df.loc[(index + 1), ('reb3')] = 1
+                    df[df[index].iloc[i + 1],'reb2'] = 1
+            elif time_bw_shots <= 3:
+                df[df[index].iloc[i + 1],'reb3'] = 1
     return df
 
-def polar_coords(df, ):
+def polar_coords(df ):
     """This function adds columns for the polar coordinates of the shot with respect to the net.
 
         Args:
