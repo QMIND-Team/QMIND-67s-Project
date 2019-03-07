@@ -1,4 +1,4 @@
-def plot_rebounds(low, middle, high):
+def plot_rebounds(low, middle, high, perimeter):
     rink_shapes = []
 
     outer_rink_shapes = dict(
@@ -307,12 +307,20 @@ def plot_rebounds(low, middle, high):
     x3 = np.random.normal(0, 50, low)
     y3 = np.random.normal(232, 28, low)
 
+    x4 = np.random.normal(160, 15, perimeter)
+    y4 = np.random.normal(350, 65, perimeter)
+
+    x5 = np.random.normal(-160, 15, perimeter)
+    y5 = np.random.normal(350, 65, perimeter)
+
     trace0 = go.Scatter(x=x0, y=y0, mode='markers')
     trace1 = go.Scatter(x=x1, y=y1, mode='markers')
     trace2 = go.Scatter(x=x2, y=y2, mode='markers')
     trace3 = go.Scatter(x=x3, y=y3, mode='markers')
+    trace4 = go.Scatter(x=x4, y=y4, mode='markers')
+    trace5 = go.Scatter(x=x5, y=y5, mode='markers')
 
-    data = [trace0, trace1, trace2, trace3]
+    data = [trace0, trace1, trace2, trace3, trace4, trace5]
 
     fig = dict(data=data, layout=layout)
 
