@@ -73,14 +73,14 @@ def rebound_type(df, time_column, seconds):
     for i in range(df.shape[0]-1):
         time_bw_shots = df[time_column].iloc[i + 1] - df[time_column].iloc[i]
         if time_bw_shots <= seconds:
-            df[df[index].iloc[i + 1],'reb'] = 1
+            df.iloc[df.index.values[i + 1],df.columns.get_loc('reb')] = 1
             if time_bw_shots <= 2:
                 if time_bw_shots <= 1:
-                    df[df[index].iloc[i + 1],'reb1'] = 1
+                    df.iloc[df.index.values[i + 1],df.columns.get_loc('reb1')] = 1
                 else:
-                    df[df[index].iloc[i + 1],'reb2'] = 1
+                    df.iloc[df.index.values[i + 1], df.columns.get_loc('reb2')] = 1
             elif time_bw_shots <= 3:
-                df[df[index].iloc[i + 1],'reb3'] = 1
+                df.iloc[df.index.values[i + 1], df.columns.get_loc('reb3')] = 1
     return df
 
 def polar_coords(df ):
