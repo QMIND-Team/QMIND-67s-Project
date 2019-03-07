@@ -324,6 +324,6 @@ def plot_rebounds(low, middle, high, perimeter):
 
     fig = dict(data=data, layout=layout)
 
-    plot(fig)
+    #plot(fig)
 
-    return
+    return fig
