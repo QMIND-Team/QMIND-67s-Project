@@ -298,20 +298,20 @@ def plot_rebounds(low, middle, high, perimeter):
     x0 = np.random.normal(0, 35, high)
     y0 = np.random.normal(448, 27.5, high)
 
-    x1 = np.random.normal(70, 25, round(middle*0.5))
-    y1 = np.random.normal(370, 25, round(middle*0.5))
+    x1 = np.random.normal(70, 25, middle)
+    y1 = np.random.normal(370, 25, middle)
 
-    x2 = np.random.normal(-70, 25, round(middle*0.5))
-    y2 = np.random.normal(370, 25, round(middle*0.5))
+    x2 = np.random.normal(-70, 25, middle)
+    y2 = np.random.normal(370, 25, middle)
 
     x3 = np.random.normal(0, 50, low)
     y3 = np.random.normal(232, 28, low)
 
-    x4 = np.random.normal(160, 15, round(perimeter*0.5))
-    y4 = np.random.normal(350, 65, round(perimeter*0.5))
+    x4 = np.random.normal(160, 15, perimeter)
+    y4 = np.random.normal(350, 65, perimeter)
 
-    x5 = np.random.normal(-160, 15, round(perimeter*0.5))
-    y5 = np.random.normal(350, 65, round(perimeter*0.5))
+    x5 = np.random.normal(-160, 15, perimeter)
+    y5 = np.random.normal(350, 65, perimeter)
 
     trace0 = go.Scatter(x=x0, y=y0, mode='markers')
     trace1 = go.Scatter(x=x1, y=y1, mode='markers')
