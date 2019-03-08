@@ -292,7 +292,9 @@ def plot_rebounds(low, middle, high, perimeter):
     import numpy as np
 
     layout = dict(
-        shapes=rink_shapes
+        shapes=rink_shapes,
+        height=600,
+        width=600,
     )
 
     x0 = np.random.normal(0, 35, high)
