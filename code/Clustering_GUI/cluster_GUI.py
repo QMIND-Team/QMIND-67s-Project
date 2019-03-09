@@ -1,12 +1,15 @@
 import sys
 import os
 import re
+import math
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sb
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+import scipy
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QDateTime, Qt, QTimer, pyqtSlot, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit, QDial,
@@ -16,7 +19,69 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit, 
                              QTableWidget, QTabWidget, QTextEdit, QVBoxLayout, QWidget,
                              QToolBar, QInputDialog, QListWidget, QAbstractItemView,
                              QGraphicsPixmapItem, QMessageBox)
+import warnings
+warnings.filterwarnings("ignore")
 
+
+def type_from_str(stat):
+    """Function to determine the type of a stat.
+
+        Args:
+            stat (str): The stat being checked.
+
+        Returns:
+            (str): Type of string.
+    """
+    if re.match('^[\d,\-]+$', str(stat)) is not None:
+        return 'int'
+    elif re.match('^[\d,.,\-]+$', str(stat)) is not None:
+        return 'float'
+    else:
+        # if re.match('(?!^[\d,.,\-]+$)^.+$', string) is not None
+        return 'str'
+
+def convert_to_type(stat):
+    """Function to convert stat to int, float or string.
+
+        Args:
+            stat (str): The stat being converted.
+
+        Returns:
+            Casted stat.
+     """
+    if type_from_str(stat) == 'int':
+        return int(stat)
+    elif type_from_str(stat) == 'float':
+        return float(stat)
+    else:
+        return str(stat)
+
+def clean_nan(data):
+    for index, row in data.iterrows():
+        for stat in row:
+            if type_from_str(stat) == 'float':
+                if math.isnan(convert_to_type(stat)):
+                    data.drop(data.index[0], inplace=True)
+    data = data.reset_index(drop=True)
+    return data
+
+def get_seasons(start_season, end_season):
+    """
+    Returns a list of all the seasons in a range.
+    :param start_season: The first season.
+    :param end_season: The last season.
+    :return: A list of all the seasons in a range.
+    """
+    start_year = int(start_season[0:4])
+    end_year = int(end_season[0:4])
+    seasons = []
+    for x in range(start_year, end_year + 1):
+        next_year = str((x + 1) % 100)
+        if len(next_year) == 1:
+            next_year = '0' + next_year
+        season = str(x) + '-' + str(next_year)
+        seasons.append(season)
+    return seasons
 
 
 def select_age(df, age):
@@ -296,22 +361,22 @@ def bar_graph(stat1, stat2, stat3, stat4, stats):
 
     plt.bar(index, datac0, bar_width,
             alpha=opacity,
-            color='b',
+            color='blue',
             label='Cluster 0')
 
     plt.bar(index + bar_width, datac1, bar_width,
             alpha=opacity,
-            color='g',
+            color='green',
             label='Cluster 1')
 
     plt.bar(index + 2 * bar_width, datac2, bar_width,
             alpha=opacity,
-            color='r',
+            color='red',
             label='Cluster 2')
 
     plt.bar(index + 3 * bar_width, datac3, bar_width,
             alpha=opacity,
-            color='y',
+            color='yellow',
             label='Cluster 3')
 
 
@@ -326,6 +391,65 @@ def bar_graph(stat1, stat2, stat3, stat4, stats):
         os.remove(file)
     plt.savefig(file)
     plt.cla()
+
+def cluster_points_relationship(teamdata, fullresults, stat1, stat2, stat3, stat4):
+    all_teams_clusters = pd.DataFrame([])
+    ohl_dict = {"Ottawa 67's": 'OTT', 'Windsor Spitfires': 'WSR', 'Sudbury Wolves': 'SBY',
+                'Sault Ste. Marie Greyhounds': 'SSM', 'Sarnia Sting': 'SAR', 'Saginaw Spirit': 'SAG',
+                'Peterborough Petes': 'PBO', 'Owen Sound Attack': 'OS', 'Oshawa Generals': 'OSH',
+                'North Bay Battalion': 'NB', 'Niagara IceDogs': 'NIAG', 'Mississauga Steelheads': 'MISS',
+                'London Knights': 'LDN', 'Kitchener Rangers': 'KIT', 'Kingston Frontenacs': 'KGN',
+                'Hamilton Bulldogs': 'HAM', 'Guelph Storm': 'GUE', 'Flint Firebirds': 'FLNT', 'Erie Otters': 'ER',
+                'Barrie Colts': 'BAR'}
+
+    for key in ohl_dict:
+        all_teams_clusters = add_team2df(pd.DataFrame([key]), select_team(ohl_dict[key], fullresults), all_teams_clusters)
+
+    all_teams_clusters.columns = ['Team', 'Cluster 0', 'Cluster 1', 'Cluster 2', 'Cluster 3']
+    all_teams_clusters = all_teams_clusters.reset_index(drop=True)
+    percent_each_cluster = find_percentages(all_teams_clusters)
+    percent_each_cluster = percent_each_cluster.reset_index(drop=True)
+    points = []
+    for index, row in percent_each_cluster.iterrows():
+        pts = teamdata[teamdata['Name'] == row['Team']]['ROW']
+        points.append(int(pts))
+    points = pd.Series(points)
+    percent_each_cluster['Points'] = points.values
+    df_with_wins = percent_each_cluster
+    df_with_wins.columns = ['Team', 'Cluster 0', 'Cluster 1', 'Cluster 2', 'Cluster 3', 'Points']
+    OHL_results = df_with_wins.iloc[0:20, :]
+    OHL_results = OHL_results.sort_values('Points')
+    c0x = OHL_results.loc[:, "Cluster 0"]
+    c0y = OHL_results.loc[:, "Points"]
+    c1x = OHL_results.loc[:, "Cluster 1"]
+    c1y = OHL_results.loc[:, "Points"]
+    c2x = OHL_results.loc[:, "Cluster 2"]
+    c2y = OHL_results.loc[:, "Points"]
+    c3x = OHL_results.loc[:, "Cluster 3"]
+    c3y = OHL_results.loc[:, "Points"]
+    x = [c0x, c1x, c2x, c3x]
+    y = [c0y, c1y, c2y, c3y]
+    results = []
+    for cluster in range(0, 4):
+        slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(x[cluster], y[cluster])
+        slope = round(slope, 3)
+        r_square = round(r_value * r_value, 3)
+        results.append([slope, r_square])
+
+        sb.regplot(x=x[cluster], y=y[cluster], ci=None, label="Slope = " + str(slope) + ", R-Squared = " +
+                                                              str(r_square))
+        plt.xlabel('Percentage of Players in Cluster ' + str(cluster))
+        plt.ylabel('Team Points')
+        plt.title('Cluster ' + str(cluster) + ' - Points Relationship')
+        plt.legend()
+        plt.tight_layout()
+        file = 'images/Cluster_' + str(cluster) + '.png'
+        if os.path.isfile(file):
+            os.remove(file)
+        plt.savefig(file)
+        plt.cla()
+
+    return results
 
 class Window(QDialog):
     """
@@ -442,6 +566,12 @@ class Window(QDialog):
         hboxEnter.addWidget(self.enterButton)
         hboxEnter.addStretch()
 
+        self.runAll = QPushButton("Run All")
+        hboxRunAll = QHBoxLayout()
+        hboxRunAll.addStretch()
+        hboxRunAll.addWidget(self.runAll)
+        hboxRunAll.addStretch()
+
         self.initialize_input()
         self.league.currentTextChanged.connect(self.league_change)
         self.allLeagues.toggled.connect(self.league.setDisabled)
@@ -453,6 +583,7 @@ class Window(QDialog):
         self.stat3.currentTextChanged.connect(self.update_stats)
         self.stat4.currentTextChanged.connect(self.update_stats)
         self.enterButton.clicked.connect(self.run_alg)
+        self.runAll.clicked.connect(self.run_all_cluster)
 
         layout = QVBoxLayout()
         layout.addLayout(hboxLeague)
@@ -464,10 +595,12 @@ class Window(QDialog):
         layout.addLayout(hboxStat3)
         layout.addLayout(hboxStat4)
         layout.addLayout(hboxEnter)
+        #layout.addLayout(hboxRunAll)
         self.leftGroupBox.setLayout(layout)
 
     def initialize_input(self):
-        leagues = ['OHL', 'AHL', 'QMJHL', 'USHL', 'WHL']
+        leagues = ['OHL']
+        #leagues = ['OHL', 'AHL', 'QMJHL', 'USHL', 'WHL']
         self.league.addItems(leagues)
 
         # update start years based on league
@@ -492,6 +625,7 @@ class Window(QDialog):
             file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
         try:
             data = pd.read_csv(file)
+            data = clean_nan(data)
             stats = data.columns.tolist()
             del stats[0:6]
 
@@ -606,6 +740,7 @@ class Window(QDialog):
             else:
                 positions = 'Defense'
             data = select_position(data, positions)
+            data = clean_nan(data)
             ages = []
             for index, row in data.iterrows():
                 if ages.count(int(row['Age'])) == 0:
@@ -683,10 +818,13 @@ class Window(QDialog):
         end_year = str(self.end.currentText())
         if start_year == end_year:
             file = 'data/' + league + '_' + start_year + '_skaters.csv'
+            teamfile = 'data/' + league + '_' + start_year + '_teams.csv'
         else:
             file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
+            teamfile = 'data/' + league + '_' + start_year + '_to_' + end_year + '_teams.csv'
         try:
             data = pd.read_csv(file)
+            teamdata = pd.read_csv(teamfile)
             if self.allAges.isChecked():
                 age = 0
             else:
@@ -700,6 +838,7 @@ class Window(QDialog):
             data = data.loc[data['GP'] > 30]
             data = select_age(data, age)
             data = select_position(data, positions)
+            data = clean_nan(data)
             if data.shape[0] < 4:
                 QMessageBox.about(self, 'Error', "There are not enough players in this group to cluster.")
                 return
@@ -707,15 +846,96 @@ class Window(QDialog):
             stat2 = str(self.stat2.currentText())
             stat3 = str(self.stat3.currentText())
             stat4 = str(self.stat4.currentText())
-            cluster(data, stat1, stat2, stat3, stat4)
+            results = cluster(data, stat1, stat2, stat3, stat4)
             stats = cluster_info(data, stat1, stat2, stat3, stat4)
             bar_graph(stat1, stat2, stat3, stat4, stats)
             cluster_visualization(data, stat1, stat2, stat3, stat4)
+            slope_rsq = cluster_points_relationship(teamdata, results, stat1, stat2, stat3, stat4)
             self.update_playerList()
             self.update_pics()
         except FileNotFoundError:
             QMessageBox.about(self, 'Error', "The data is not available")
 
+    def run_all_cluster(self):
+        if self.allLeagues.isChecked():
+            league = 'OHL_AHL_QMJHL_USHL_WHL'
+        else:
+            league = str(self.league.currentText())
+        start_year = str(self.start.currentText())
+        end_year = str(self.end.currentText())
+        if start_year == end_year:
+            file = 'data/' + league + '_' + start_year + '_skaters.csv'
+            teamfile = 'data/' + league + '_' + start_year + '_teams.csv'
+        else:
+            file = 'data/' + league + '_' + start_year + '_to_' + end_year + '_skaters.csv'
+            teamfile = 'data/' + league + '_' + start_year + '_to_' + end_year + '_teams.csv'
+        try:
+            data = pd.read_csv(file)
+            teamdata = pd.read_csv(teamfile)
+            if self.allAges.isChecked():
+                age = 0
+            else:
+                age = str(self.age.currentText())
+            if self.allPlayers.isChecked():
+                positions = 'All'
+            elif self.forwards.isChecked():
+                positions = 'Forwards'
+            else:
+                positions = 'Defense'
+            data = data.loc[data['GP'] > 30]
+            data = select_age(data, age)
+            data = select_position(data, positions)
+            data = clean_nan(data)
+            if data.shape[0] < 4:
+                QMessageBox.about(self, 'Error', "There are not enough players in this group to cluster.")
+                return
+            stats = data.columns.tolist()
+            del stats[0:6]
+            self.stat1.blockSignals(True)
+            self.stat2.blockSignals(True)
+            self.stat3.blockSignals(True)
+            self.stat4.blockSignals(True)
+            self.stat1.clear()
+            self.stat2.clear()
+            self.stat3.clear()
+            self.stat4.clear()
+            self.stat1.addItems(stats)
+            self.stat2.addItems(stats)
+            self.stat3.addItems(stats)
+            self.stat4.addItems(stats)
+            i = 0
+            dict = {}
+            regression = []
+            for stat1 in stats:
+                self.stat1.setCurrentText(stat1)
+                for stat2 in stats[stats.index(stat1) + 1:]:
+                    if stat2 != stat1:
+                        self.stat2.setCurrentText(stat2)
+                        for stat3 in stats[stats.index(stat2) + 1:]:
+                            if stat3 != stat1 and stat3 != stat2:
+                                self.stat3.setCurrentText(stat3)
+                                for stat4 in stats[stats.index(stat3) + 1:]:
+                                    if stat4 != stat1 and stat4 != stat2 and stat4 != stat3:
+                                        self.stat4.setCurrentText(stat4)
+                                        results = cluster(data, stat1, stat2, stat3, stat4)
+                                        slope_rqs = cluster_points_relationship(teamdata, results, stat1, stat2, stat3, stat4)
+                                        for c in range(0, 4):
+                                            try:
+                                                regression.append([stat1, stat2, stat3, stat4, c, slope_rqs[i][0], slope_rqs[i][1]])
+                                            except IndexError:
+                                                print(slope_rqs, "Index error")
+                        dict[stat1 + stat2] = pd.DataFrame(regression,
+                                                            columns=["Stat 1", "Stat 2", "Stat 3", "Stat 4",
+                                                                    "Cluster", "Slope", "R-Squared"])
+                        dict[stat1 + stat2] = dict[stat1 + stat2].sort_values(by=['R-Squared', 'Slope'], ascending=[False, False])
+                        dict[stat1 + stat2].to_csv("results/" + stat1 + '_' + stat2 + ".csv")
+                        i += 1
+            self.stat1.blockSignals(False)
+            self.stat2.blockSignals(False)
+            self.stat3.blockSignals(False)
+            self.stat4.blockSignals(False)
+        except FileNotFoundError:
+            QMessageBox.about(self, 'Error', "The data is not available")
 
 
     def update_pics(self):
@@ -737,6 +957,15 @@ class Window(QDialog):
                 self.layoutSeeCluster.itemAt(i).widget().close()
         self.layoutSeeCluster.addWidget(labelSeeClusters)
 
+        cluster = str(self.clusterChoice2.currentText())
+        clusterVSWin = QPixmap('images/Cluster_' + cluster + '.png')
+        smaller_image = clusterVSWin.scaled(800, 800, Qt.KeepAspectRatio, Qt.FastTransformation)
+        labelClusterVSWin = QLabel("Cluster vs Wins")
+        labelClusterVSWin.setPixmap(smaller_image)
+        for i in range(self.layoutClusterVSWin.count()):
+            if type(self.layoutClusterVSWin.itemAt(i)) != QHBoxLayout:
+                self.layoutClusterVSWin.itemAt(i).widget().close()
+        self.layoutClusterVSWin.addWidget(labelClusterVSWin)
 
     def createRightWidget(self):
 
@@ -748,7 +977,7 @@ class Window(QDialog):
         self.rightWidget.addTab(playerListTab, "Player List")
         self.rightWidget.addTab(barGraphTab, "Cluster Statistics")
         self.rightWidget.addTab(seeClusterTab, "Visualization")
-        #self.rightWidget.addTab(clusterWinTab, "Percentage of Players in Cluster vs Wins")
+        self.rightWidget.addTab(clusterWinTab, "Percentage of Players in Cluster vs Wins")
 
         hboxClusterChoice1 = QHBoxLayout()
         hboxClusterChoice1.addStretch()
