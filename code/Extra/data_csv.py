@@ -223,7 +223,7 @@ def download_multiple(leagues=['OHL'], seasons=['2018-19'], players=['skaters'],
     print("Done")
     return csvs
 
-def download_csv(driver, league, season, players, play_type, csvs):
+def download_csv(driver, league='OHL', season='2018-19', players='skaters', play_type='', csvs):
     """Function to download a particular season's stats from prospect stats website by clicking csv button.
 
         Args:
