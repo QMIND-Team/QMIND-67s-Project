@@ -306,7 +306,7 @@ def cluster_visualization(data, stat1, stat2, stat3, stat4):
     plt.scatter(cluster0.iloc[:, 0], cluster0.iloc[:, 1], s=10, c='red', label='Cluster 0')
     plt.scatter(cluster1.iloc[:, 0], cluster1.iloc[:, 1], s=10, c='green', label='Cluster 1')
     plt.scatter(cluster2.iloc[:, 0], cluster2.iloc[:, 1], s=10, c='blue', label='Cluster 2')
-    plt.scatter(cluster3.iloc[:, 0], cluster3.iloc[:, 1], s=10, c='yellow', label='Cluster 3')
+    plt.scatter(cluster3.iloc[:, 0], cluster3.iloc[:, 1], s=10, c='black', label='Cluster 3')
     plt.xlabel('PCA 1')
     plt.ylabel('PCA 2')
     plt.title('Clusters')
@@ -376,7 +376,7 @@ def bar_graph(stat1, stat2, stat3, stat4, stats):
 
     plt.bar(index + 3 * bar_width, datac3, bar_width,
             alpha=opacity,
-            color='yellow',
+            color='black',
             label='Cluster 3')
 
 
