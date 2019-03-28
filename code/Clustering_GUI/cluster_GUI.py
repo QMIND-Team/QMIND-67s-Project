@@ -83,6 +83,21 @@ def get_seasons(start_season, end_season):
         seasons.append(season)
     return seasons
 
+def normalize(data, stat1, stat2, stat3, stat4):
+    std1 = data.loc[:, stat1].std()
+    std2 = data.loc[:, stat2].std()
+    std3 = data.loc[:, stat3].std()
+    std4 = data.loc[:, stat4].std()
+    avg1 = data.loc[:, stat1].mean()
+    avg2 = data.loc[:, stat2].mean()
+    avg3 = data.loc[:, stat3].mean()
+    avg4 = data.loc[:, stat4].mean()
+    data.loc[:, stat1] = (data.loc[:, stat1] - avg1) / std1
+    data.loc[:, stat2] = (data.loc[:, stat2] - avg2) / std2
+    data.loc[:, stat3] = (data.loc[:, stat3] - avg3) / std3
+    data.loc[:, stat4] = (data.loc[:, stat4] - avg4) / std4
+    return data
+
 
 def select_age(df, age):
     """
@@ -336,7 +351,7 @@ def cluster_info(data, stat1, stat2, stat3, stat4):
     centroids.columns = [stat1, stat2, stat3, stat4]
     average_values = pd.Series(centroids.mean())
     cluster_info = centroids.subtract(average_values, axis=1)
-    return cluster_info
+    return cluster_info, centroids
 
 def bar_graph(stat1, stat2, stat3, stat4, stats):
     """
@@ -847,10 +862,17 @@ class Window(QDialog):
             stat3 = str(self.stat3.currentText())
             stat4 = str(self.stat4.currentText())
             results = cluster(data, stat1, stat2, stat3, stat4)
-            stats = cluster_info(data, stat1, stat2, stat3, stat4)
+            nearest_data = normalize(results.copy(), stat1, stat2, stat3, stat4)
+            stats, centroids = cluster_info(data, stat1, stat2, stat3, stat4)
             bar_graph(stat1, stat2, stat3, stat4, stats)
             cluster_visualization(data, stat1, stat2, stat3, stat4)
             slope_rsq = cluster_points_relationship(teamdata, results, stat1, stat2, stat3, stat4)
+            nearest_data['Distance'] = 0
+            for index, row in nearest_data.iterrows():
+                for stat in centroids:
+                    nearest_data.loc[index, 'Distance'] += pow(row[stat] - centroids.loc[row['Cluster'], stat], 2)
+                nearest_data.loc[index, 'Distance'] = math.sqrt(nearest_data.loc[index, 'Distance'])
+            nearest_data = nearest_data.drop(columns=['Team', stat1, stat2, stat3, stat4])
             self.update_playerList()
             self.update_pics()
         except FileNotFoundError:
