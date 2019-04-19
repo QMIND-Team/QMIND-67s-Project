@@ -15,7 +15,7 @@ import prospectstats_CSVDownload as psCSVdl
 
 def merge(csv1, csv2, new_name, all_years=False, sort='P',):
     """
-    Combines the stats of multiple files into one and saves to new name.
+    Combines the stats of multiple files into one with combined stats for all players and saves to new name.
     :param csv1: Name of first file.
     :param csv2: Name of second file.
     :param new_name: Name of new file created.
@@ -67,14 +67,14 @@ def merge(csv1, csv2, new_name, all_years=False, sort='P',):
     df1.to_csv('data/' + new_name)
     return new_name
 
-def mergeSeasonRange(league='OHL', start_year='2015-16', end_year='2018-19', player_type='skaters', play_types=[' '], all_years=False):
+def mergeSeasonRange(league='OHL', start_year='2015-16', end_year='2018-19', player_type='skaters', play_types=[''], all_years=False):
     """
     Merges the stats of multiple files together into one and saves under new name.
     :param league: League.
     :param start_year: First year being merged.
     :param end_year: Last year being merged.
     :param player_type: 'skaters', 'teams', 'goalies', 'forwards', or 'defense'.
-    :param play_types: ' ', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3'
+    :param play_types: '', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3'
     :param all_years: If only players that played in all years should be included.
     :return: name of new file created.
     """
@@ -90,14 +90,14 @@ def mergeSeasonRange(league='OHL', start_year='2015-16', end_year='2018-19', pla
     print('Created: ' + new_name)
     return new_name
 
-def mergeAllSeasonCombinations(league='OHL', start_season='2017-18', end_season='2018-19', player_type='skaters', play_types=[' '], all_years=False):
+def mergeAllSeasonCombinations(league='OHL', start_season='2017-18', end_season='2018-19', player_type='skaters', play_types=[''], all_years=False):
     """
     Merges the stats of multiple files together for separate files for every combination of consecutive years.
     :param league: League.
     :param start_season: First year being merged.
     :param end_season: Last year being merged.
     :param player_type: 'skaters', 'teams', 'goalies', 'forwards', or 'defense'.
-    :param play_types: ' ', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3'
+    :param play_types: '', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3'
     :param all_years: If only players that played in all years should be included.
     :return: list of all file names created
     """
@@ -111,6 +111,7 @@ def mergeAllSeasonCombinations(league='OHL', start_season='2017-18', end_season=
                 file_names.append(mergeSeasonRange(league, start_year, end_year, player_type, play_types, all_years))
             else:
                 csv = psCSVdl.getFileName(league, end_year, end_year, player_type, play_types)
+                print(csv)
                 new_name = psCSVdl.getFileName(league, start_year, end_year, player_type, play_types)
                 merge(file_names[-1], csv, new_name, all_years, psCSVdl.getSortType(player_type))
                 print('Created: ' + new_name)
