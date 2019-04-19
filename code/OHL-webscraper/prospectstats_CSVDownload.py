@@ -21,7 +21,7 @@ def downloadCSV(driver, league='OHL', season='2018-19', player_type='skaters', p
     :param league: 'OHL', 'AHL', 'QMJHL', 'USHL', or 'WHL'
     :param season: '2018-19', '2017-18', '2016-17', ... (earliest year depends on league)
     :param player_type: 'skaters', 'teams', 'goalies', 'forwards', or defense'
-    :param play_type: ' ', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3'
+    :param play_type: '', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3'
     :return: Name of downloaded file.
     """
     print(getFileName(league, season, season, player_type, play_type) + '...')
@@ -36,13 +36,13 @@ def downloadCSV(driver, league='OHL', season='2018-19', player_type='skaters', p
     cleanCSV(new_name, player_type)
     return new_name
 
-def downloadSingleCSV(league='OHL', season='2018-19', player_type='skaters', play_type=' '):
+def downloadSingleCSV(league='OHL', season='2018-19', player_type='skaters', play_type=''):
     """
     Download a particular league's stats for one season, player type and play type.
     :param league: 'OHL', 'AHL', 'QMJHL', 'USHL', or 'WHL'
     :param season: '2018-19', '2017-18', '2016-17', ... (earliest year depends on league)
     :param player_type: 'skaters', 'teams', 'goalies', 'forwards', or defense'
-    :param play_type: ' ', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3'
+    :param play_type: '', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3'
     :return: Name of downloaded file in list.
     """
     driver = getWebDriver()
@@ -52,14 +52,14 @@ def downloadSingleCSV(league='OHL', season='2018-19', player_type='skaters', pla
     print("Done")
     return [new_name]
 
-def downloadMultipleCSV(leagues=['OHL'], start_year='2015-16', end_year='2018-19', player_types=['skaters'], play_types=[' ']):
+def downloadMultipleCSV(leagues=['OHL'], start_year='2015-16', end_year='2018-19', player_types=['skaters'], play_types=['']):
     """
     Downloads every combination of league, player type and play type for consecutive years.
-    :param league: 'OHL', 'AHL', 'QMJHL', 'USHL', or 'WHL'
+    :param leagues: 'OHL', 'AHL', 'QMJHL', 'USHL', or 'WHL'
     :param start_year: The first year to be downloaded.
     :param end_year: The last year to be downloaded.
-    :param player_type: 'skaters', 'teams', 'goalies', 'forwards', or defense'
-    :param play_type: ' ', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3':param leagues:
+    :param player_types: 'skaters', 'teams', 'goalies', 'forwards', or defense'
+    :param play_types: '', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3':param leagues:
     :return: List of all files downloaded.
     """
     file_names = []
@@ -103,13 +103,14 @@ def getWebDriver():
     driver = webdriver.Chrome(chrome_options=chrome_options, executable_path=dirpath + '/chromedriver')
     return driver
 
-def getFileName(league='OHL', start_year='2018-19', end_year='2018-19', player_type='skaters', play_types=[' ']):
+def getFileName(league='OHL', start_year='2018-19', end_year='2018-19', player_type='skaters', play_types=['']):
     """
     Returns name of file for particular combination of league, season, player type, and play type.
     :param league: 'OHL', 'AHL', 'QMJHL', 'USHL', or 'WHL'
-    :param season: '2018-19', '2017-18', '2016-17', ... (earliest year depends on league)
+    :param start_year: '2018-19', '2017-18', '2016-17', ... (earliest year depends on league)
+    :param end_year: '2018-19', '2017-18', '2016-17', ... (earliest year depends on league)
     :param player_type: 'skaters', 'teams', 'goalies', 'forwards', or defense'
-    :param play_types: ' ', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3'
+    :param play_types: '', '5v5', '5v4', '5v3', '4v5', '4v4', '4v3', '3v5', '3v4', or '3v3'
     :return: name of file for particular combination of league, season, player type, and play type.
     """
     if end_year == start_year:
@@ -117,7 +118,7 @@ def getFileName(league='OHL', start_year='2018-19', end_year='2018-19', player_t
     else:
         name = league + '_' + start_year + '_to_' + end_year + '_' + player_type
     for play_type in play_types:
-        if play_type != ' ':
+        if play_type != '':
             name += '_' + play_type
     return name + '.csv'
 
@@ -154,7 +155,7 @@ def cleanData(df, player_type):
     offset = 0
     for index, row in df.iterrows():
         for column in df:
-            if len(row) != df.shape[1] or not isLegal(df, row[column], column, index):
+            if pd.isnull(row[column]) or not isLegal(df, row[column], column, index - offset):
                 df = df.drop(df.index[index - offset])
                 offset += 1
     sort = getSortType(player_type)
@@ -184,7 +185,7 @@ def typeFromString(stat):
         return 'int'
     elif re.match('^[\d,.,\-]+$', str(stat)) is not None:
         return 'float'
-    # if re.match('(?!^[\d,.,\-]+$)^.+$', string) is not None
+    # if re.match('(?!^[\d,.,\-]+$)^.+$', string) is not None:
     return 'str'
 
 def castToType(stat, column):
@@ -229,11 +230,14 @@ def isLegal(df, stat, column, index):
     :param index: Index of stat used for getting location.
     :return: True if legal value, False is not legal value.
     """
-    df.loc[index, column] = castToType(stat)
+    df.loc[index, column] = castToType(stat, column)
     if typeOfColumn(column) == 'str':
         if typeFromString(stat) != 'str':
             df.loc[index, column] = str(stat)
+        elif stat == '':
+            return False
         elif re.match('[\w,\d]+', stat) is None:
+            # only matches with words or numbers, (e.g. "$$" would not match)
             return False
 
     elif typeOfColumn(column) == 'float':
