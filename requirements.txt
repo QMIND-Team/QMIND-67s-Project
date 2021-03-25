@@ -56,7 +56,7 @@ PyQt5==5.12
 PyQt5-sip==4.19.14
 python-dateutil==2.7.3
 pytz==2018.5
-pyyaml==4.2b1
+pyyaml==5.4
 pyzmq==17.1.2
 qtconsole==4.4.1
 requests==2.20.0
