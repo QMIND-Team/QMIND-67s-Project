@@ -1,6 +1,6 @@
 matplotlib==3.0.0
 pandas==0.23.4
-numpy==1.15.2
+numpy==1.22.0
 requests==2.20.0
 beautifulsoup4==4.7.1
 plotly==3.6.1
